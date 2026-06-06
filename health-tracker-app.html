@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="theme-color" content="#6366f1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<title>Ημερήσιο Ημερολόγιο Υγείας</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4ff;color:#1e293b;min-height:100vh;}
+  :root{--primary:#6366f1;--primary-dark:#4f46e5;--green:#22c55e;--orange:#f97316;--red:#ef4444;--bg:#f0f4ff;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;}
+  .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+  .header{background:var(--primary);color:white;padding:16px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(99,102,241,0.3);}
+  .header h1{font-size:17px;font-weight:700;flex:1;}
+  .header .sub{font-size:12px;opacity:0.8;}
+  .content{flex:1;padding:16px;display:flex;flex-direction:column;gap:16px;}
+  .card{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+  .card-title{font-size:15px;font-weight:700;color:var(--primary);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .card-title .emoji{font-size:18px;}
+  .habit-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .habit-row:last-child{border-bottom:none;}
+  .habit-check{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;background:white;}
+  .habit-check.done{background:var(--green);border-color:var(--green);}
+  .habit-check.done::after{content:'✓';color:white;font-size:14px;font-weight:700;}
+  .habit-label{font-size:14px;color:var(--text);flex:1;line-height:1.3;}
+  input,textarea,select{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:var(--text);background:white;outline:none;font-family:inherit;}
+  input:focus,textarea:focus,select:focus{border-color:var(--primary);}
+  textarea{resize:vertical;min-height:70px;}
+  .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+  .form-label{font-size:13px;font-weight:600;color:var(--muted);}
+  .hunger-row{display:flex;gap:8px;justify-content:space-between;}
+  .hunger-btn{flex:1;padding:10px 4px;border:2px solid var(--border);border-radius:10px;background:white;cursor:pointer;font-size:15px;font-weight:700;text-align:center;transition:all 0.15s;color:var(--muted);}
+  .hunger-btn.active{background:var(--primary);border-color:var(--primary);color:white;}
+  .meal-entry{background:#f8faff;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--border);position:relative;}
+  .meal-entry .remove-btn{position:absolute;top:10px;right:10px;background:#fee2e2;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:16px;color:#ef4444;display:flex;align-items:center;justify-content:center;}
+  .add-btn{width:100%;padding:12px;background:#f0f4ff;border:2px dashed var(--primary);border-radius:12px;color:var(--primary);font-size:14px;font-weight:600;cursor:pointer;transition:background 0.15s;}
+  .add-btn:hover{background:#e0e7ff;}
+  .save-btn{width:100%;padding:15px;background:var(--primary);color:white;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 12px rgba(99,102,241,0.3);}
+  .save-btn:hover{background:var(--primary-dark);}
+  .save-btn:disabled{background:#a5b4fc;cursor:not-allowed;}
+  .tab-bar{display:flex;gap:4px;background:#e0e7ff;border-radius:14px;padding:4px;margin-bottom:4px;}
+  .tab{flex:1;padding:8px 4px;border:none;background:transparent;border-radius:10px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all 0.15s;text-align:center;}
+  .tab.active{background:white;color:var(--primary);box-shadow:0 1px 4px rgba(0,0,0,0.1);}
+  .freq-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+  .freq-row:last-child{border-bottom:none;}
+  .freq-label{font-size:14px;flex:1;}
+  .freq-count{display:flex;align-items:center;gap:8px;}
+  .freq-count button{width:30px;height:30px;border:1.5px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:var(--text);}
+  .freq-count button:active{background:#f0f4ff;}
+  .freq-count span{min-width:24px;text-align:center;font-size:16px;font-weight:700;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:white;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.3);animation:fadeUp 0.3s ease;}
+  @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+  .login-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:var(--bg);}
+  .login-card{background:white;border-radius:20px;padding:32px;width:100%;max-width:360px;box-shadow:0 4px 24px rgba(0,0,0,0.1);}
+  .login-logo{text-align:center;margin-bottom:24px;}
+  .login-logo .icon{font-size:56px;}
+  .login-logo h2{font-size:22px;font-weight:800;color:var(--primary);margin-top:8px;}
+  .login-logo p{font-size:14px;color:var(--muted);margin-top:4px;}
+  .coach-client-list{display:flex;flex-direction:column;gap:8px;}
+  .client-item{background:white;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;border:1.5px solid var(--border);transition:border-color 0.15s;}
+  .client-item:hover{border-color:var(--primary);}
+  .client-avatar{width:40px;height:40px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;}
+  .client-name{font-weight:600;font-size:15px;}
+  .client-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+  .back-btn{background:none;border:none;color:white;cursor:pointer;font-size:22px;padding:2px;}
+  .section-header{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;}
+  .date-nav{display:flex;align-items:center;gap:8px;justify-content:center;background:white;border-radius:12px;padding:10px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+  .date-nav button{background:none;border:1.5px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;}
+  .date-nav .date-str{font-size:14px;font-weight:700;min-width:140px;text-align:center;}
+  .habit-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .habit-chip{background:#f0f4ff;border-radius:10px;padding:8px;text-align:center;font-size:11px;font-weight:600;color:var(--muted);}
+  .habit-chip.done{background:#dcfce7;color:#16a34a;}
+  .data-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .data-table th{background:#f0f4ff;padding:8px;text-align:left;font-weight:700;color:var(--muted);font-size:11px;}
+  .data-table td{padding:8px;border-bottom:1px solid var(--border);}
+  .badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+  .badge-green{background:#dcfce7;color:#16a34a;}
+  .badge-red{background:#fee2e2;color:#dc2626;}
+  .badge-blue{background:#e0e7ff;color:#4338ca;}
+  .link-box{background:#f8faff;border:1.5px solid var(--primary);border-radius:10px;padding:12px;font-size:12px;word-break:break-all;color:var(--primary);}
+  .copy-btn{margin-top:8px;padding:8px 14px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
+  .spinner{width:36px;height:36px;border:3px solid #e0e7ff;border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:40px auto;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .progress-bar{height:6px;background:#e0e7ff;border-radius:3px;overflow:hidden;margin-top:8px;}
+  .progress-fill{height:100%;background:var(--primary);border-radius:3px;transition:width 0.4s;}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
+  .empty-state .icon{font-size:48px;margin-bottom:12px;}
+  .score-pill{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:13px;font-weight:700;background:#f0f4ff;color:var(--primary);}
+  .week-select{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+  .week-day{flex:1;min-width:38px;padding:8px 4px;border:1.5px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:11px;font-weight:600;text-align:center;color:var(--muted);transition:all 0.15s;}
+  .week-day.selected{background:var(--primary);border-color:var(--primary);color:white;}
+  .week-day.has-data{border-color:var(--green);}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
+  .modal{background:white;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;}
+  .modal h3{font-size:17px;font-weight:700;margin-bottom:16px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+// ── CONFIG — paste your Apps Script Web App URL here ──────────
+const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+
+// ── Greek date helpers ────────────────────────────────────────
+const GR_DAYS = ["Κυρ","Δευ","Τρί","Τετ","Πέμ","Παρ","Σάβ"];
+const GR_MONTHS = ["Ιαν","Φεβ","Μαρ","Απρ","Μαΐ","Ιουν","Ιουλ","Αυγ","Σεπ","Οκτ","Νοε","Δεκ"];
+const fmtDate = d => {
+  const dt = new Date(d + "T12:00:00");
+  return `${GR_DAYS[dt.getDay()]} ${dt.getDate()} ${GR_MONTHS[dt.getMonth()]}`;
+};
+const todayStr = () => new Date().toISOString().split("T")[0];
+const addDays = (d, n) => { const dt = new Date(d + "T12:00:00"); dt.setDate(dt.getDate()+n); return dt.toISOString().split("T")[0]; };
+
+const HABITS = [
+  { id:"water",      label:"💧 Νερά (επαρκής ενυδάτωση)" },
+  { id:"every3h",    label:"⏰ Γεύματα κάθε 3 ώρες" },
+  { id:"movement",   label:"🚶 Κίνηση / Άσκηση" },
+  { id:"breathing",  label:"🌬️ Ασκήσεις αναπνοής" },
+  { id:"sleep",      label:"😴 Καλός ύπνος" },
+  { id:"sleepTime",  label:"🕐 Χρόνος μέχρι να κοιμηθείς" },
+  { id:"waterAM",    label:"🌅 Νερό μόλις ξυπνήσεις" },
+  { id:"noScreen",   label:"📵 Αποχή από οθόνες πριν τον ύπνο" },
+  { id:"journaling", label:"📓 Journaling" },
+  { id:"selfCare",   label:"💆 Self Care" },
+  { id:"toilet",     label:"🚽 Τουαλέτα" },
+  { id:"urination",  label:"💛 7-8 φορές ούρηση" },
+  { id:"oneFat",     label:"🥑 Μέχρι 1 λιπαρό" },
+  { id:"protein",    label:"🥩 Επαρκής πρωτεΐνη" },
+  { id:"gut",        label:"🌿 Λειτ. εντέρου" },
+];
+
+const FOOD_CATEGORIES = [
+  { id:"legumes",    label:"🫘 Όσπρια" },
+  { id:"oilDishes",  label:"🫒 Λαδερά" },
+  { id:"pasta",      label:"🍝 Ζυμαρικά" },
+  { id:"fish",       label:"🐟 Ψάρι" },
+  { id:"chicken",    label:"🍗 Κοτόπουλο" },
+  { id:"redMeat",    label:"🥩 Κόκκινο κρέας" },
+  { id:"fried",      label:"🍟 Τηγανιτά" },
+  { id:"fats",       label:"🧈 Λιπαρά" },
+  { id:"fullFatCheese", label:"🧀 Τυριά με πλήρη λιπαρά" },
+  { id:"softDrinks", label:"🥤 Αναψυκτικά" },
+  { id:"coffee",     label:"☕ Καφέδες" },
+  { id:"alcohol",    label:"🍷 Ποτά" },
+];
+
+async function api(action, params = {}, method = "GET") {
+  if (method === "GET") {
+    const qs = new URLSearchParams({ action, ...params }).toString();
+    const res = await fetch(`${SCRIPT_URL}?${qs}`);
+    return res.json();
+  } else {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action, ...params }),
+    });
+    return res.json();
+  }
+}
+
+function Toast({ msg, onDone }) {
+  useEffect(() => { const t = setTimeout(onDone, 2500); return () => clearTimeout(t); }, []);
+  return <div className="toast">{msg}</div>;
+}
+
+function ClientApp({ token }) {
+  const [client, setClient] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("habits");
+  const [date, setDate] = useState(todayStr());
+  const [habits, setHabits] = useState({});
+  const [meals, setMeals] = useState([emptyMeal()]);
+  const [foodFreq, setFoodFreq] = useState({});
+  const [feedback, setFeedback] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [dataLoading, setDataLoading] = useState(false);
+
+  function emptyMeal() {
+    return { id: Date.now(), time:"", food:"", portion:"", energyCal:"", hungerScore:"", emotions:"" };
+  }
+
+  useEffect(() => {
+    api("getClient", { token }).then(r => {
+      if (r.success) { setClient(r.data); setLoading(false); }
+      else setError("Ο σύνδεσμός σου δεν είναι έγκυρος. Επικοινώνησε με τη Λαμπρινή.");
+    }).catch(() => setError("Σφάλμα σύνδεσης. Δοκίμασε ξανά."));
+  }, [token]);
+
+  useEffect(() => {
+    if (!client) return;
+    setDataLoading(true);
+    api("getClientData", { token, date }).then(r => {
+      if (r.success) {
+        const d = r.data;
+        const h = {};
+        d.habits.forEach(row => { h[row.habit] = row.done === true || row.done === "TRUE"; });
+        setHabits(h);
+        if (d.foodLog.length > 0) {
+          setMeals(d.foodLog.map((row,i) => ({
+            id: i, time: row.time||"", food: row.food||"", portion: row.portion||"",
+            energyCal: row.energyCal||"", hungerScore: row.hungerScore||"", emotions: row.emotions||""
+          })));
+        } else {
+          setMeals([emptyMeal()]);
+        }
+        const ff = {};
+        d.foodFreq.forEach(row => { ff[row.category] = parseInt(row.count)||0; });
+        setFoodFreq(ff);
+        setFeedback(d.feedback[0]?.comment || "");
+      }
+      setDataLoading(false);
+    }).catch(() => setDataLoading(false));
+  }, [client, date]);
+
+  const toggleHabit = id => setHabits(prev => ({ ...prev, [id]: !prev[id] }));
+  const addMeal = () => setMeals(prev => [...prev, emptyMeal()]);
+  const removeMeal = id => setMeals(prev => prev.filter(m => m.id !== id));
+  const updateMeal = (id, field, val) => setMeals(prev => prev.map(m => m.id===id ? {...m,[field]:val} : m));
+  const setFreq = (id, delta) => setFoodFreq(prev => ({ ...prev, [id]: Math.max(0, (prev[id]||0)+delta) }));
+
+  const saveAll = async () => {
+    setSaving(true);
+    try {
+      await Promise.all([
+        api("saveHabits", { token, date, habits: HABITS.map(h => ({ habit: h.id, done: !!habits[h.id] })) }, "POST"),
+        api("saveFoodLog", { token, date, entries: meals.filter(m => m.food || m.time) }, "POST"),
+        api("saveFoodFrequency", { token, weekStart: getWeekStart(date), items: FOOD_CATEGORIES.map(c => ({ category: c.id, count: foodFreq[c.id]||0 })) }, "POST"),
+        api("saveFeedback", { token, date, comment: feedback }, "POST"),
+      ]);
+      setToast("✅ Αποθηκεύτηκε!");
+    } catch(e) {
+      setToast("❌ Σφάλμα αποθήκευσης");
+    }
+    setSaving(false);
+  };
+
+  const getWeekStart = dateStr => {
+    const d = new Date(dateStr + "T12:00:00");
+    const day = d.getDay();
+    const diff = day===0 ? -6 : 1-day;
+    d.setDate(d.getDate()+diff);
+    return d.toISOString().split("T")[0];
+  };
+
+  const doneCount = HABITS.filter(h => habits[h.id]).length;
+
+  if (loading) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}><div className="spinner"/></div>;
+  if (error) return <div className="login-wrap"><div className="login-card"><div className="login-logo"><div className="icon">⚠️</div><h2 style={{color:"#ef4444"}}>Σφάλμα</h2><p>{error}</p></div></div></div>;
+
+  return (
+    <div className="app">
+      <div className="header">
+        <div style={{flex:1}}>
+          <div className="sub">Γεια σου, {client.name}! 👋</div>
+          <h1>Ημερήσιο Ημερολόγιο</h1>
+        </div>
+      </div>
+      <div className="content">
+        <div className="date-nav">
+          <button onClick={() => setDate(addDays(date,-1))}>‹</button>
+          <div className="date-str">{fmtDate(date)}</div>
+          <button onClick={() => setDate(addDays(date,1))} disabled={date>=todayStr()}>›</button>
+        </div>
+        {dataLoading ? <div className="spinner"/> : <>
+        <div className="tab-bar">
+          <button className={`tab ${activeTab==="habits"?"active":""}`} onClick={() => setActiveTab("habits")}>Συνήθειες</button>
+          <button className={`tab ${activeTab==="food"?"active":""}`} onClick={() => setActiveTab("food")}>Γεύματα</button>
+          <button className={`tab ${activeTab==="freq"?"active":""}`} onClick={() => setActiveTab("freq")}>Εβδ/αδα</button>
+          <button className={`tab ${activeTab==="feedback"?"active":""}`} onClick={() => setActiveTab("feedback")}>Σχόλια</button>
+        </div>
+        {activeTab==="habits" && (
+          <div className="card">
+            <div className="card-title"><span className="emoji">✅</span> Συνήθειες ({doneCount}/{HABITS.length})</div>
+            <div className="progress-bar"><div className="progress-fill" style={{width:`${(doneCount/HABITS.length)*100}%`}}/></div>
+            <div style={{marginTop:16}}>
+              {HABITS.map(h => (
+                <div key={h.id} className="habit-row" onClick={() => toggleHabit(h.id)}>
+                  <div className={`habit-check ${habits[h.id]?"done":""}`}/>
+                  <div className="habit-label">{h.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {activeTab==="food" && (
+          <div className="card">
+            <div className="card-title"><span className="emoji">🍽️</span> Καταγραφή Γευμάτων</div>
+            {meals.map((meal, idx) => (
+              <div key={meal.id} className="meal-entry">
+                <div style={{fontWeight:700,fontSize:13,color:"var(--muted)",marginBottom:10}}>Γεύμα {idx+1}</div>
+                {meals.length > 1 && <button className="remove-btn" onClick={() => removeMeal(meal.id)}>×</button>}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                  <div className="form-group">
+                    <label className="form-label">Ώρα</label>
+                    <input type="time" value={meal.time} onChange={e => updateMeal(meal.id,"time",e.target.value)}/>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Μερίδα</label>
+                    <input placeholder="π.χ. 1 μπολ" value={meal.portion} onChange={e => updateMeal(meal.id,"portion",e.target.value)}/>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Τροφή & Υγρά</label>
+                  <input placeholder="Τι έφαγες / ήπιες;" value={meal.food} onChange={e => updateMeal(meal.id,"food",e.target.value)}/>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Βαθμός Πείνας (0–5)</label>
+                  <div className="hunger-row">
+                    {[0,1,2,3,4,5].map(n => (
+                      <button key={n} className={`hunger-btn ${meal.hungerScore===n?"active":""}`} onClick={() => updateMeal(meal.id,"hungerScore",n)}>{n}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="form-group" style={{marginBottom:0}}>
+                  <label className="form-label">Συναισθήματα / Σκέψεις</label>
+                  <textarea placeholder="Πώς ένιωθες;" value={meal.emotions} onChange={e => updateMeal(meal.id,"emotions",e.target.value)} style={{minHeight:56}}/>
+                </div>
+              </div>
+            ))}
+            <button className="add-btn" onClick={addMeal}>+ Προσθήκη γεύματος</button>
+          </div>
+        )}
+        {activeTab==="freq" && (
+          <div className="card">
+            <div className="card-title"><span className="emoji">📊</span> Συχνότητα Τροφών (Εβδομάδα)</div>
+            <div style={{fontSize:12,color:"var(--muted)",marginBottom:14}}>Πόσες φορές αυτή την εβδομάδα;</div>
+            {FOOD_CATEGORIES.map(cat => (
+              <div key={cat.id} className="freq-row">
+                <div className="freq-label">{cat.label}</div>
+                <div className="freq-count">
+                  <button onClick={() => setFreq(cat.id,-1)}>−</button>
+                  <span>{foodFreq[cat.id]||0}</span>
+                  <button onClick={() => setFreq(cat.id,1)}>+</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {activeTab==="feedback" && (
+          <div className="card">
+            <div className="card-title"><span className="emoji">💬</span> Σχόλιο / Feedback</div>
+            <div className="form-group">
+              <label className="form-label">Γράψε το σχόλιό σου</label>
+              <textarea placeholder="Πώς πήγε η μέρα σου; Υπάρχει κάτι που θέλεις να μοιραστείς με τη Λαμπρινή;" value={feedback} onChange={e => setFeedback(e.target.value)} style={{minHeight:120}}/>
+            </div>
+          </div>
+        )}
+        <button className="save-btn" onClick={saveAll} disabled={saving}>
+          {saving ? "Αποθήκευση..." : "💾 Αποθήκευση Ημέρας"}
+        </button>
+        </>}
+      </div>
+      {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
+    </div>
+  );
+}
+
+function CoachApp() {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [clients, setClients] = useState([]);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [clientData, setClientData] = useState(null);
+  const [view, setView] = useState("list");
+  const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(todayStr());
+  const [toast, setToast] = useState(null);
+  const [newClientName, setNewClientName] = useState("");
+  const [newClientLink, setNewClientLink] = useState(null);
+  const [addingClient, setAddingClient] = useState(false);
+
+  const login = async () => {
+    const r = await api("coachAuth", { password }, "POST");
+    if (r.success) { setAuthenticated(true); loadClients(password); }
+    else setAuthError("Λάθος κωδικός");
+  };
+
+  const loadClients = async (pwd = password) => {
+    setLoading(true);
+    const r = await api("getAllClients", { coachPassword: pwd });
+    if (r.success) setClients(r.data);
+    setLoading(false);
+  };
+
+  const openClient = async (client) => {
+    setSelectedClient(client);
+    setView("client");
+    setLoading(true);
+    const r = await api("getClientHistory", { coachPassword: password, clientId: client.clientId });
+    if (r.success) setClientData(r.data);
+    setLoading(false);
+  };
+
+  const addClient = async () => {
+    if (!newClientName.trim()) return;
+    setAddingClient(true);
+    const r = await api("addClient", { coachPassword: password, name: newClientName.trim() }, "POST");
+    if (r.success) {
+      const link = `${window.location.origin}${window.location.pathname}?client=${r.data.token}`;
+      setNewClientLink({ link, name: r.data.name });
+      loadClients();
+      setNewClientName("");
+    }
+    setAddingClient(false);
+  };
+
+  const copyLink = (link) => {
+    navigator.clipboard.writeText(link).then(() => setToast("✅ Ο σύνδεσμός αντιγράφηκε!"));
+  };
+
+  if (!authenticated) {
+    return (
+      <div className="login-wrap">
+        <div className="login-card">
+          <div className="login-logo">
+            <div className="icon">🌿</div>
+            <h2>Πίνακας Coach</h2>
+            <p>Λαμπρινή, καλώς ήρθες!</p>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Κωδικός</label>
+            <input type="password" placeholder="Εισάγετε κωδικό" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key==="Enter" && login()}/>
+          </div>
+          {authError && <div style={{color:"var(--red)",fontSize:13,marginBottom:12}}>{authError}</div>}
+          <button className="save-btn" onClick={login}>Είσοδος</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "client" && selectedClient) {
+    const allDates = clientData ? [...new Set([
+      ...(clientData.habits||[]).map(r=>r.date),
+      ...(clientData.foodLog||[]).map(r=>r.date),
+      ...(clientData.feedback||[]).map(r=>r.date),
+    ])].sort().reverse() : [];
+    const dayHabits = clientData?.habits?.filter(r => r.date===selectedDate) || [];
+    const dayFood   = clientData?.foodLog?.filter(r => r.date===selectedDate) || [];
+    const dayFeedback = clientData?.feedback?.find(r => r.date===selectedDate);
+    const doneHabits  = dayHabits.filter(r => r.done===true||r.done==="TRUE");
+
+    return (
+      <div className="app">
+        <div className="header">
+          <button className="back-btn" onClick={() => { setView("list"); setClientData(null); }}>‹</button>
+          <div><h1>{selectedClient.name}</h1><div className="sub">Προβολή δεδομένων</div></div>
+        </div>
+        <div className="content">
+          {loading ? <div className="spinner"/> : <>
+          <div className="date-nav">
+            <button onClick={() => setSelectedDate(addDays(selectedDate,-1))}>‹</button>
+            <div className="date-str">{fmtDate(selectedDate)}</div>
+            <button onClick={() => setSelectedDate(addDays(selectedDate,1))}>›</button>
+          </div>
+          <div className="card">
+            <div className="card-title"><span className="emoji">✅</span> Συνήθειες {doneHabits.length}/{HABITS.length}</div>
+            <div className="progress-bar"><div className="progress-fill" style={{width:`${(doneHabits.length/HABITS.length)*100}%`}}/></div>
+            <div style={{marginTop:14}} className="habit-summary">
+              {HABITS.map(h => {
+                const row = dayHabits.find(r => r.habit===h.id);
+                const done = row && (row.done===true||row.done==="TRUE");
+                return <div key={h.id} className={`habit-chip ${done?"done":""}`}>{h.label.split(" ").slice(1).join(" ")}</div>;
+              })}
+            </div>
+          </div>
+          {dayFood.length > 0 && (
+            <div className="card">
+              <div className="card-title"><span className="emoji">🍽️</span> Γεύματα</div>
+              <table className="data-table">
+                <thead><tr><th>Ώρα</th><th>Τροφή</th><th>Πείνα</th><th>Συναισθήματα</th></tr></thead>
+                <tbody>{dayFood.map((row,i) => (
+                  <tr key={i}>
+                    <td>{row.time||"—"}</td>
+                    <td>{row.food||"—"}{row.portion ? <span style={{fontSize:11,color:"var(--muted)"}}>  {row.portion}</span> : ""}</td>
+                    <td><span className="score-pill">{row.hungerScore!==""?row.hungerScore:"—"}</span></td>
+                    <td style={{fontSize:12,color:"var(--muted)",maxWidth:120}}>{row.emotions||"—"}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          )}
+          {dayFeedback?.comment && (
+            <div className="card">
+              <div className="card-title"><span className="emoji">💬</span> Σχόλιο</div>
+              <div style={{fontSize:14,lineHeight:1.6,color:"var(--text)"}}>{dayFeedback.comment}</div>
+            </div>
+          )}
+          {(() => {
+            const d = new Date(selectedDate+"T12:00:00");
+            const day = d.getDay();
+            const diff = day===0 ? -6 : 1-day;
+            d.setDate(d.getDate()+diff);
+            const ws = d.toISOString().split("T")[0];
+            const freqRows = clientData?.foodFreq?.filter(r=>r.weekStart===ws)||[];
+            if (!freqRows.length) return null;
+            return (
+              <div className="card">
+                <div className="card-title"><span className="emoji">📊</span> Εβδομαδιαία Συχνότητα</div>
+                {FOOD_CATEGORIES.map(cat => {
+                  const row = freqRows.find(r=>r.category===cat.id);
+                  const count = row ? parseInt(row.count)||0 : 0;
+                  if (!count) return null;
+                  return <div key={cat.id} className="freq-row"><div className="freq-label">{cat.label}</div><span className="badge badge-blue">{count}×</span></div>;
+                })}
+              </div>
+            );
+          })()}
+          {dayHabits.length===0 && dayFood.length===0 && !dayFeedback && (
+            <div className="empty-state"><div className="icon">📭</div><p>Δεν υπάρχουν δεδομένα για αυτή την ημέρα.</p></div>
+          )}
+          {allDates.length > 0 && (
+            <div className="card">
+              <div className="section-header">Ημέρες με καταγραφές</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {allDates.map(d => (
+                  <button key={d} onClick={() => setSelectedDate(d)}
+                    style={{padding:"6px 10px",border:`1.5px solid ${d===selectedDate?"var(--primary)":"var(--border)"}`,borderRadius:8,background:d===selectedDate?"var(--primary)":"white",color:d===selectedDate?"white":"var(--text)",fontSize:12,cursor:"pointer",fontWeight:600}}>
+                    {fmtDate(d)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          </>}
+        </div>
+        {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="app">
+      <div className="header">
+        <div className="emoji" style={{fontSize:24}}>🌿</div>
+        <div style={{flex:1}}><div className="sub">Καλώς ήρθες, Λαμπρινή</div><h1>Πίνακας Coach</h1></div>
+      </div>
+      <div className="content">
+        <div className="card">
+          <div className="card-title"><span className="emoji">➕</span> Νέος Πελάτης</div>
+          <div style={{display:"flex",gap:8}}>
+            <input placeholder="Όνομα πελάτη" value={newClientName} onChange={e => setNewClientName(e.target.value)} onKeyDown={e => e.key==="Enter" && addClient()} style={{flex:1}}/>
+            <button onClick={addClient} disabled={addingClient || !newClientName.trim()} style={{padding:"10px 16px",background:"var(--primary)",color:"white",border:"none",borderRadius:10,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}>
+              {addingClient ? "..." : "Δημιουργία"}
+            </button>
+          </div>
+          {newClientLink && (
+            <div style={{marginTop:12}}>
+              <div style={{fontSize:13,fontWeight:700,marginBottom:6,color:"var(--green)"}}>✅ Ο σύνδεσμος για τον/την {newClientLink.name}:</div>
+              <div className="link-box">{newClientLink.link}</div>
+              <button className="copy-btn" onClick={() => copyLink(newClientLink.link)}>📋 Αντιγραφή Συνδέσμου</button>
+              <div style={{fontSize:11,color:"var(--muted)",marginTop:6}}>Στείλε αυτόν τον σύνδεσμο στον πελάτη σου (WhatsApp, email κ.λπ.)</div>
+            </div>
+          )}
+        </div>
+        <div className="section-header">Πελάτες ({clients.length})</div>
+        {loading ? <div className="spinner"/> : (
+          clients.length === 0
+            ? <div className="empty-state"><div className="icon">👥</div><p>Δεν υπάρχουν πελάτες ακόμα.</p></div>
+            : <div className="coach-client-list">
+                {clients.map(c => {
+                  const initials = c.name.split(" ").map(w=>w[0]).join("").toUpperCase().substring(0,2);
+                  return (
+                    <div key={c.clientId} className="client-item" onClick={() => openClient(c)}>
+                      <div className="client-avatar">{initials}</div>
+                      <div><div className="client-name">{c.name}</div><div className="client-meta">Από {c.createdAt ? new Date(c.createdAt).toLocaleDateString("el-GR") : "—"}</div></div>
+                      <div style={{marginLeft:"auto",fontSize:20,color:"var(--muted)"}}>›</div>
+                    </div>
+                  );
+                })}
+              </div>
+        )}
+        <button className="save-btn" style={{background:"#f0f4ff",color:"var(--primary)",boxShadow:"none"}} onClick={() => loadClients()}>🔄 Ανανέωση</button>
+      </div>
+      {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
+    </div>
+  );
+}
+
+function App() {
+  const params = new URLSearchParams(window.location.search);
+  const clientToken = params.get("client");
+  const isCoach = params.get("coach") !== null || !clientToken;
+  if (!isCoach && clientToken) return <ClientApp token={clientToken}/>;
+  return <CoachApp/>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
