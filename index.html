@@ -654,9 +654,6 @@ function ClientHistoryView({ client, password, onBack }) {
     })();
   }, []);
 
-  if (loading) return <div className="flex justify-center py-12"><Spinner /></div>;
-  if (error) return <p className="text-red-500 text-sm p-4">{error}</p>;
-
   const habitsGrouped = useMemo(()=>{
     const g = {};
     (data?.habits||[]).forEach(h=>{ if(!g[h.date])g[h.date]=[]; g[h.date].push(h); });
@@ -668,6 +665,9 @@ function ClientHistoryView({ client, password, onBack }) {
     (data?.foodLog||[]).forEach(e=>{ if(!g[e.date])g[e.date]=[]; g[e.date].push(e); });
     return Object.entries(g).sort((a,b)=>b[0].localeCompare(a[0]));
   },[data]);
+
+  if (loading) return <div className="flex justify-center py-12"><Spinner /></div>;
+  if (error) return <p className="text-red-500 text-sm p-4">{error}</p>;
 
   return (
     <div className="space-y-4 fade-in">
