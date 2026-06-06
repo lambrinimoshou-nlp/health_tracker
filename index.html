@@ -1,600 +1,938 @@
 <!DOCTYPE html>
 <html lang="el">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<meta name="theme-color" content="#6366f1"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<title>Ημερήσιο Ημερολόγιο Υγείας</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Health Tracker — Let's Thrive</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4ff;color:#1e293b;min-height:100vh;}
-  :root{--primary:#6366f1;--primary-dark:#4f46e5;--green:#22c55e;--orange:#f97316;--red:#ef4444;--bg:#f0f4ff;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;}
-  .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
-  .header{background:var(--primary);color:white;padding:16px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(99,102,241,0.3);}
-  .header h1{font-size:17px;font-weight:700;flex:1;}
-  .header .sub{font-size:12px;opacity:0.8;}
-  .content{flex:1;padding:16px;display:flex;flex-direction:column;gap:16px;}
-  .card{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
-  .card-title{font-size:15px;font-weight:700;color:var(--primary);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
-  .card-title .emoji{font-size:18px;}
-  .habit-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
-  .habit-row:last-child{border-bottom:none;}
-  .habit-check{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;background:white;}
-  .habit-check.done{background:var(--green);border-color:var(--green);}
-  .habit-check.done::after{content:'✓';color:white;font-size:14px;font-weight:700;}
-  .habit-label{font-size:14px;color:var(--text);flex:1;line-height:1.3;}
-  input,textarea,select{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:var(--text);background:white;outline:none;font-family:inherit;}
-  input:focus,textarea:focus,select:focus{border-color:var(--primary);}
-  textarea{resize:vertical;min-height:70px;}
-  .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
-  .form-label{font-size:13px;font-weight:600;color:var(--muted);}
-  .hunger-row{display:flex;gap:8px;justify-content:space-between;}
-  .hunger-btn{flex:1;padding:10px 4px;border:2px solid var(--border);border-radius:10px;background:white;cursor:pointer;font-size:15px;font-weight:700;text-align:center;transition:all 0.15s;color:var(--muted);}
-  .hunger-btn.active{background:var(--primary);border-color:var(--primary);color:white;}
-  .meal-entry{background:#f8faff;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--border);position:relative;}
-  .meal-entry .remove-btn{position:absolute;top:10px;right:10px;background:#fee2e2;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:16px;color:#ef4444;display:flex;align-items:center;justify-content:center;}
-  .add-btn{width:100%;padding:12px;background:#f0f4ff;border:2px dashed var(--primary);border-radius:12px;color:var(--primary);font-size:14px;font-weight:600;cursor:pointer;transition:background 0.15s;}
-  .add-btn:hover{background:#e0e7ff;}
-  .save-btn{width:100%;padding:15px;background:var(--primary);color:white;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 12px rgba(99,102,241,0.3);}
-  .save-btn:hover{background:var(--primary-dark);}
-  .save-btn:disabled{background:#a5b4fc;cursor:not-allowed;}
-  .tab-bar{display:flex;gap:4px;background:#e0e7ff;border-radius:14px;padding:4px;margin-bottom:4px;}
-  .tab{flex:1;padding:8px 4px;border:none;background:transparent;border-radius:10px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all 0.15s;text-align:center;}
-  .tab.active{background:white;color:var(--primary);box-shadow:0 1px 4px rgba(0,0,0,0.1);}
-  .freq-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
-  .freq-row:last-child{border-bottom:none;}
-  .freq-label{font-size:14px;flex:1;}
-  .freq-count{display:flex;align-items:center;gap:8px;}
-  .freq-count button{width:30px;height:30px;border:1.5px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:var(--text);}
-  .freq-count button:active{background:#f0f4ff;}
-  .freq-count span{min-width:24px;text-align:center;font-size:16px;font-weight:700;}
-  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:white;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.3);animation:fadeUp 0.3s ease;}
-  @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
-  .login-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:var(--bg);}
-  .login-card{background:white;border-radius:20px;padding:32px;width:100%;max-width:360px;box-shadow:0 4px 24px rgba(0,0,0,0.1);}
-  .login-logo{text-align:center;margin-bottom:24px;}
-  .login-logo .icon{font-size:56px;}
-  .login-logo h2{font-size:22px;font-weight:800;color:var(--primary);margin-top:8px;}
-  .login-logo p{font-size:14px;color:var(--muted);margin-top:4px;}
-  .coach-client-list{display:flex;flex-direction:column;gap:8px;}
-  .client-item{background:white;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;border:1.5px solid var(--border);transition:border-color 0.15s;}
-  .client-item:hover{border-color:var(--primary);}
-  .client-avatar{width:40px;height:40px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;}
-  .client-name{font-weight:600;font-size:15px;}
-  .client-meta{font-size:12px;color:var(--muted);margin-top:2px;}
-  .back-btn{background:none;border:none;color:white;cursor:pointer;font-size:22px;padding:2px;}
-  .section-header{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;}
-  .date-nav{display:flex;align-items:center;gap:8px;justify-content:center;background:white;border-radius:12px;padding:10px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
-  .date-nav button{background:none;border:1.5px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;}
-  .date-nav .date-str{font-size:14px;font-weight:700;min-width:140px;text-align:center;}
-  .habit-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-  .habit-chip{background:#f0f4ff;border-radius:10px;padding:8px;text-align:center;font-size:11px;font-weight:600;color:var(--muted);}
-  .habit-chip.done{background:#dcfce7;color:#16a34a;}
-  .data-table{width:100%;border-collapse:collapse;font-size:13px;}
-  .data-table th{background:#f0f4ff;padding:8px;text-align:left;font-weight:700;color:var(--muted);font-size:11px;}
-  .data-table td{padding:8px;border-bottom:1px solid var(--border);}
-  .badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;}
-  .badge-green{background:#dcfce7;color:#16a34a;}
-  .badge-red{background:#fee2e2;color:#dc2626;}
-  .badge-blue{background:#e0e7ff;color:#4338ca;}
-  .link-box{background:#f8faff;border:1.5px solid var(--primary);border-radius:10px;padding:12px;font-size:12px;word-break:break-all;color:var(--primary);}
-  .copy-btn{margin-top:8px;padding:8px 14px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
-  .spinner{width:36px;height:36px;border:3px solid #e0e7ff;border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:40px auto;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .progress-bar{height:6px;background:#e0e7ff;border-radius:3px;overflow:hidden;margin-top:8px;}
-  .progress-fill{height:100%;background:var(--primary);border-radius:3px;transition:width 0.4s;}
-  .empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
-  .empty-state .icon{font-size:48px;margin-bottom:12px;}
-  .score-pill{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:13px;font-weight:700;background:#f0f4ff;color:var(--primary);}
-  .week-select{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-  .week-day{flex:1;min-width:38px;padding:8px 4px;border:1.5px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:11px;font-weight:600;text-align:center;color:var(--muted);transition:all 0.15s;}
-  .week-day.selected{background:var(--primary);border-color:var(--primary);color:white;}
-  .week-day.has-data{border-color:var(--green);}
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
-  .modal{background:white;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;}
-  .modal h3{font-size:17px;font-weight:700;margin-bottom:16px;}
+  * { -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .spin { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .fade-in { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+  input[type=range] { accent-color: #7c3aed; }
+  .tab-active { border-bottom: 2px solid #7c3aed; color: #7c3aed; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: #7c3aed !important; box-shadow: 0 0 0 3px rgba(124,58,237,0.1); }
 </style>
 </head>
-<body>
+<body class="bg-slate-50 min-h-screen">
 <div id="root"></div>
+
 <script type="text/babel">
-const { useState, useEffect, useCallback, useRef } = React;
+const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
-// ── CONFIG — paste your Apps Script Web App URL here ──────────
-const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";
-
-// ── Greek date helpers ────────────────────────────────────────
-const GR_DAYS = ["Κυρ","Δευ","Τρί","Τετ","Πέμ","Παρ","Σάβ"];
-const GR_MONTHS = ["Ιαν","Φεβ","Μαρ","Απρ","Μαΐ","Ιουν","Ιουλ","Αυγ","Σεπ","Οκτ","Νοε","Δεκ"];
-const fmtDate = d => {
-  const dt = new Date(d + "T12:00:00");
-  return `${GR_DAYS[dt.getDay()]} ${dt.getDate()} ${GR_MONTHS[dt.getMonth()]}`;
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+// Paste your deployed Apps Script URL here (or set via Settings in the app)
+const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbzXNh6ZRyG3GE6eMUSFcxC5IhVvO1J7618LrXPQMdfBLQJTh9JNoVMB5bInXZA64Ig/exec";
+const STORAGE = {
+  TOKEN:   "ht_token",
+  NAME:    "ht_name",
+  COACH:   "ht_coach",
+  API_URL: "ht_api_url",
 };
-const todayStr = () => new Date().toISOString().split("T")[0];
-const addDays = (d, n) => { const dt = new Date(d + "T12:00:00"); dt.setDate(dt.getDate()+n); return dt.toISOString().split("T")[0]; };
 
-const HABITS = [
-  { id:"water",      label:"💧 Νερά (επαρκής ενυδάτωση)" },
-  { id:"every3h",    label:"⏰ Γεύματα κάθε 3 ώρες" },
-  { id:"movement",   label:"🚶 Κίνηση / Άσκηση" },
-  { id:"breathing",  label:"🌬️ Ασκήσεις αναπνοής" },
-  { id:"sleep",      label:"😴 Καλός ύπνος" },
-  { id:"sleepTime",  label:"🕐 Χρόνος μέχρι να κοιμηθείς" },
-  { id:"waterAM",    label:"🌅 Νερό μόλις ξυπνήσεις" },
-  { id:"noScreen",   label:"📵 Αποχή από οθόνες πριν τον ύπνο" },
-  { id:"journaling", label:"📓 Journaling" },
-  { id:"selfCare",   label:"💆 Self Care" },
-  { id:"toilet",     label:"🚽 Τουαλέτα" },
-  { id:"urination",  label:"💛 7-8 φορές ούρηση" },
-  { id:"oneFat",     label:"🥑 Μέχρι 1 λιπαρό" },
-  { id:"protein",    label:"🥩 Επαρκής πρωτεΐνη" },
-  { id:"gut",        label:"🌿 Λειτ. εντέρου" },
+// ─── HABIT TEMPLATES ─────────────────────────────────────────────────────────
+const DEFAULT_HABITS = [
+  "Ήπια 8+ ποτήρια νερό",
+  "Έκανα κίνηση / άσκηση",
+  "Κοιμήθηκα 7–8 ώρες",
+  "Έφαγα πρωινό",
+  "Δεν έφαγα αργά τη νύχτα",
+  "Χωρίς ζάχαρη / γλυκά",
+  "Ενσυνείδητη κατανάλωση (χωρίς οθόνη)",
+  "Έλαβα τα συμπληρώματά μου",
 ];
 
-const FOOD_CATEGORIES = [
-  { id:"legumes",    label:"🫘 Όσπρια" },
-  { id:"oilDishes",  label:"🫒 Λαδερά" },
-  { id:"pasta",      label:"🍝 Ζυμαρικά" },
-  { id:"fish",       label:"🐟 Ψάρι" },
-  { id:"chicken",    label:"🍗 Κοτόπουλο" },
-  { id:"redMeat",    label:"🥩 Κόκκινο κρέας" },
-  { id:"fried",      label:"🍟 Τηγανιτά" },
-  { id:"fats",       label:"🧈 Λιπαρά" },
-  { id:"fullFatCheese", label:"🧀 Τυριά με πλήρη λιπαρά" },
-  { id:"softDrinks", label:"🥤 Αναψυκτικά" },
-  { id:"coffee",     label:"☕ Καφέδες" },
-  { id:"alcohol",    label:"🍷 Ποτά" },
+// ─── FOOD FREQUENCY CATEGORIES ────────────────────────────────────────────────
+const FOOD_FREQ_CATS = [
+  { id:"veg",    label:"🥦 Λαχανικά",          hint:"σαλάτες, μαγειρευτά" },
+  { id:"fruit",  label:"🍎 Φρούτα",             hint:"φρέσκα ή κατεψυγμένα" },
+  { id:"grains", label:"🌾 Δημητριακά / ψωμί",  hint:"ρύζι, ζυμαρικά, ψωμί" },
+  { id:"prot",   label:"🍗 Πρωτεΐνες",          hint:"κρέας, ψάρι, αυγά, τόνος" },
+  { id:"dairy",  label:"🥛 Γαλακτοκομικά",      hint:"γιαούρτι, τυρί, γάλα" },
+  { id:"legum",  label:"🫘 Όσπρια",             hint:"φακές, ρεβίθια, φασόλια" },
+  { id:"fats",   label:"🫒 Καλά λίπη",          hint:"ελαιόλαδο, ξηροί καρποί, αβοκάντο" },
+  { id:"sweet",  label:"🍰 Γλυκά / επεξεργασμένα", hint:"μπισκότα, αναψυκτικά, fast food" },
+  { id:"coffee", label:"☕ Καφές",              hint:"εσπρέσο, φραπέ, τσάι" },
+  { id:"alc",    label:"🍷 Αλκοόλ",             hint:"κρασί, μπύρα, ποτό" },
 ];
 
-async function api(action, params = {}, method = "GET") {
+const FREQ_OPTIONS = ["0","1","2","3","4","5","6","7+"];
+const HUNGER_LABELS = {1:"Λιμασμένη",3:"Αρκετά πεινασμένη",5:"Ουδέτερη",7:"Σχεδόν χορτάτη",10:"Πολύ χορτάτη"};
+const EMOTIONS_OPTIONS = ["Ήρεμη","Άγχος","Κούραση","Χαρά","Λύπη","Βαρεμάρα","Επιβράβευση","Κοινωνική πίεση","Άλλο"];
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const today = () => new Date().toISOString().split("T")[0];
+const fmtDate = d => {
+  const [y,m,day] = d.split("-");
+  const months = ["Ιαν","Φεβ","Μαρ","Απρ","Μαΐ","Ιουν","Ιουλ","Αυγ","Σεπ","Οκτ","Νοε","Δεκ"];
+  return `${parseInt(day)} ${months[parseInt(m)-1]} ${y}`;
+};
+const weekStart = d => {
+  const dt = new Date(d); const day = dt.getDay();
+  const diff = day===0 ? -6 : 1-day;
+  dt.setDate(dt.getDate()+diff);
+  return dt.toISOString().split("T")[0];
+};
+const ls = { get:(k)=>{ try{return localStorage.getItem(k);}catch{return null;} }, set:(k,v)=>{ try{localStorage.setItem(k,v);}catch{} }, del:(k)=>{ try{localStorage.removeItem(k);}catch{} } };
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+async function api(action, params={}, method="GET") {
+  const base = ls.get(STORAGE.API_URL) || DEFAULT_API_URL;
+  if (!base) throw new Error("Δεν έχει οριστεί το API URL. Πήγαινε στις Ρυθμίσεις.");
   if (method === "GET") {
     const qs = new URLSearchParams({ action, ...params }).toString();
-    const res = await fetch(`${SCRIPT_URL}?${qs}`);
-    return res.json();
+    const r = await fetch(`${base}?${qs}`);
+    const j = await r.json();
+    if (!j.success) throw new Error(j.error || "Σφάλμα");
+    return j.data;
   } else {
-    const res = await fetch(SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify({ action, ...params }),
-    });
-    return res.json();
+    const r = await fetch(base, { method:"POST", body: JSON.stringify({ action, ...params }) });
+    const j = await r.json();
+    if (!j.success) throw new Error(j.error || "Σφάλμα");
+    return j.data;
   }
 }
 
-function Toast({ msg, onDone }) {
-  useEffect(() => { const t = setTimeout(onDone, 2500); return () => clearTimeout(t); }, []);
-  return <div className="toast">{msg}</div>;
+// ─── SMALL UI ─────────────────────────────────────────────────────────────────
+function Spinner() {
+  return <div className="w-5 h-5 border-2 border-violet-300 border-t-violet-600 rounded-full spin" />;
+}
+function Btn({children, onClick, disabled, variant="primary", size="md", className=""}) {
+  const base = "font-semibold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2";
+  const sz = size==="sm" ? "px-3 py-1.5 text-sm" : size==="lg" ? "px-6 py-3.5 text-base" : "px-4 py-2.5 text-sm";
+  const v = variant==="primary" ? "bg-violet-600 hover:bg-violet-700 text-white shadow-sm" :
+            variant==="outline" ? "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" :
+            variant==="ghost"   ? "text-gray-500 hover:bg-gray-100" :
+            variant==="danger"  ? "bg-red-500 hover:bg-red-600 text-white" : "";
+  return <button onClick={onClick} disabled={disabled} className={`${base} ${sz} ${v} ${disabled?"opacity-50 cursor-not-allowed":""} ${className}`}>{children}</button>;
+}
+function Card({children, className=""}) {
+  return <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm ${className}`}>{children}</div>;
+}
+function Toast({msg, type="success", onClose}) {
+  useEffect(()=>{ const t=setTimeout(onClose,3000); return ()=>clearTimeout(t); },[]);
+  const color = type==="success"?"bg-emerald-600":type==="error"?"bg-red-500":"bg-violet-600";
+  return <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 ${color} text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium fade-in max-w-xs text-center`}>{msg}</div>;
 }
 
-function ClientApp({ token }) {
-  const [client, setClient] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("habits");
-  const [date, setDate] = useState(todayStr());
-  const [habits, setHabits] = useState({});
-  const [meals, setMeals] = useState([emptyMeal()]);
-  const [foodFreq, setFoodFreq] = useState({});
-  const [feedback, setFeedback] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [dataLoading, setDataLoading] = useState(false);
-
-  function emptyMeal() {
-    return { id: Date.now(), time:"", food:"", portion:"", energyCal:"", hungerScore:"", emotions:"" };
-  }
-
-  useEffect(() => {
-    api("getClient", { token }).then(r => {
-      if (r.success) { setClient(r.data); setLoading(false); }
-      else setError("Ο σύνδεσμός σου δεν είναι έγκυρος. Επικοινώνησε με τη Λαμπρινή.");
-    }).catch(() => setError("Σφάλμα σύνδεσης. Δοκίμασε ξανά."));
-  }, [token]);
-
-  useEffect(() => {
-    if (!client) return;
-    setDataLoading(true);
-    api("getClientData", { token, date }).then(r => {
-      if (r.success) {
-        const d = r.data;
-        const h = {};
-        d.habits.forEach(row => { h[row.habit] = row.done === true || row.done === "TRUE"; });
-        setHabits(h);
-        if (d.foodLog.length > 0) {
-          setMeals(d.foodLog.map((row,i) => ({
-            id: i, time: row.time||"", food: row.food||"", portion: row.portion||"",
-            energyCal: row.energyCal||"", hungerScore: row.hungerScore||"", emotions: row.emotions||""
-          })));
-        } else {
-          setMeals([emptyMeal()]);
-        }
-        const ff = {};
-        d.foodFreq.forEach(row => { ff[row.category] = parseInt(row.count)||0; });
-        setFoodFreq(ff);
-        setFeedback(d.feedback[0]?.comment || "");
-      }
-      setDataLoading(false);
-    }).catch(() => setDataLoading(false));
-  }, [client, date]);
-
-  const toggleHabit = id => setHabits(prev => ({ ...prev, [id]: !prev[id] }));
-  const addMeal = () => setMeals(prev => [...prev, emptyMeal()]);
-  const removeMeal = id => setMeals(prev => prev.filter(m => m.id !== id));
-  const updateMeal = (id, field, val) => setMeals(prev => prev.map(m => m.id===id ? {...m,[field]:val} : m));
-  const setFreq = (id, delta) => setFoodFreq(prev => ({ ...prev, [id]: Math.max(0, (prev[id]||0)+delta) }));
-
-  const saveAll = async () => {
-    setSaving(true);
-    try {
-      await Promise.all([
-        api("saveHabits", { token, date, habits: HABITS.map(h => ({ habit: h.id, done: !!habits[h.id] })) }, "POST"),
-        api("saveFoodLog", { token, date, entries: meals.filter(m => m.food || m.time) }, "POST"),
-        api("saveFoodFrequency", { token, weekStart: getWeekStart(date), items: FOOD_CATEGORIES.map(c => ({ category: c.id, count: foodFreq[c.id]||0 })) }, "POST"),
-        api("saveFeedback", { token, date, comment: feedback }, "POST"),
-      ]);
-      setToast("✅ Αποθηκεύτηκε!");
-    } catch(e) {
-      setToast("❌ Σφάλμα αποθήκευσης");
-    }
-    setSaving(false);
-  };
-
-  const getWeekStart = dateStr => {
-    const d = new Date(dateStr + "T12:00:00");
-    const day = d.getDay();
-    const diff = day===0 ? -6 : 1-day;
-    d.setDate(d.getDate()+diff);
-    return d.toISOString().split("T")[0];
-  };
-
-  const doneCount = HABITS.filter(h => habits[h.id]).length;
-
-  if (loading) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}><div className="spinner"/></div>;
-  if (error) return <div className="login-wrap"><div className="login-card"><div className="login-logo"><div className="icon">⚠️</div><h2 style={{color:"#ef4444"}}>Σφάλμα</h2><p>{error}</p></div></div></div>;
-
+// ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
+function SettingsView({ onBack }) {
+  const [url, setUrl] = useState(ls.get(STORAGE.API_URL)||"");
+  const [saved, setSaved] = useState(false);
+  const save = () => { ls.set(STORAGE.API_URL, url.trim()); setSaved(true); setTimeout(()=>setSaved(false),2000); };
+  const logout = () => { [STORAGE.TOKEN,STORAGE.NAME,STORAGE.COACH].forEach(k=>ls.del(k)); window.location.reload(); };
   return (
-    <div className="app">
-      <div className="header">
-        <div style={{flex:1}}>
-          <div className="sub">Γεια σου, {client.name}! 👋</div>
-          <h1>Ημερήσιο Ημερολόγιο</h1>
-        </div>
+    <div className="fade-in space-y-4">
+      <div className="flex items-center gap-3 mb-2">
+        <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500">←</button>
+        <h2 className="font-bold text-gray-800">Ρυθμίσεις</h2>
       </div>
-      <div className="content">
-        <div className="date-nav">
-          <button onClick={() => setDate(addDays(date,-1))}>‹</button>
-          <div className="date-str">{fmtDate(date)}</div>
-          <button onClick={() => setDate(addDays(date,1))} disabled={date>=todayStr()}>›</button>
-        </div>
-        {dataLoading ? <div className="spinner"/> : <>
-        <div className="tab-bar">
-          <button className={`tab ${activeTab==="habits"?"active":""}`} onClick={() => setActiveTab("habits")}>Συνήθειες</button>
-          <button className={`tab ${activeTab==="food"?"active":""}`} onClick={() => setActiveTab("food")}>Γεύματα</button>
-          <button className={`tab ${activeTab==="freq"?"active":""}`} onClick={() => setActiveTab("freq")}>Εβδ/αδα</button>
-          <button className={`tab ${activeTab==="feedback"?"active":""}`} onClick={() => setActiveTab("feedback")}>Σχόλια</button>
-        </div>
-        {activeTab==="habits" && (
-          <div className="card">
-            <div className="card-title"><span className="emoji">✅</span> Συνήθειες ({doneCount}/{HABITS.length})</div>
-            <div className="progress-bar"><div className="progress-fill" style={{width:`${(doneCount/HABITS.length)*100}%`}}/></div>
-            <div style={{marginTop:16}}>
-              {HABITS.map(h => (
-                <div key={h.id} className="habit-row" onClick={() => toggleHabit(h.id)}>
-                  <div className={`habit-check ${habits[h.id]?"done":""}`}/>
-                  <div className="habit-label">{h.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {activeTab==="food" && (
-          <div className="card">
-            <div className="card-title"><span className="emoji">🍽️</span> Καταγραφή Γευμάτων</div>
-            {meals.map((meal, idx) => (
-              <div key={meal.id} className="meal-entry">
-                <div style={{fontWeight:700,fontSize:13,color:"var(--muted)",marginBottom:10}}>Γεύμα {idx+1}</div>
-                {meals.length > 1 && <button className="remove-btn" onClick={() => removeMeal(meal.id)}>×</button>}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                  <div className="form-group">
-                    <label className="form-label">Ώρα</label>
-                    <input type="time" value={meal.time} onChange={e => updateMeal(meal.id,"time",e.target.value)}/>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Μερίδα</label>
-                    <input placeholder="π.χ. 1 μπολ" value={meal.portion} onChange={e => updateMeal(meal.id,"portion",e.target.value)}/>
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Τροφή & Υγρά</label>
-                  <input placeholder="Τι έφαγες / ήπιες;" value={meal.food} onChange={e => updateMeal(meal.id,"food",e.target.value)}/>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Βαθμός Πείνας (0–5)</label>
-                  <div className="hunger-row">
-                    {[0,1,2,3,4,5].map(n => (
-                      <button key={n} className={`hunger-btn ${meal.hungerScore===n?"active":""}`} onClick={() => updateMeal(meal.id,"hungerScore",n)}>{n}</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="form-group" style={{marginBottom:0}}>
-                  <label className="form-label">Συναισθήματα / Σκέψεις</label>
-                  <textarea placeholder="Πώς ένιωθες;" value={meal.emotions} onChange={e => updateMeal(meal.id,"emotions",e.target.value)} style={{minHeight:56}}/>
-                </div>
-              </div>
-            ))}
-            <button className="add-btn" onClick={addMeal}>+ Προσθήκη γεύματος</button>
-          </div>
-        )}
-        {activeTab==="freq" && (
-          <div className="card">
-            <div className="card-title"><span className="emoji">📊</span> Συχνότητα Τροφών (Εβδομάδα)</div>
-            <div style={{fontSize:12,color:"var(--muted)",marginBottom:14}}>Πόσες φορές αυτή την εβδομάδα;</div>
-            {FOOD_CATEGORIES.map(cat => (
-              <div key={cat.id} className="freq-row">
-                <div className="freq-label">{cat.label}</div>
-                <div className="freq-count">
-                  <button onClick={() => setFreq(cat.id,-1)}>−</button>
-                  <span>{foodFreq[cat.id]||0}</span>
-                  <button onClick={() => setFreq(cat.id,1)}>+</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        {activeTab==="feedback" && (
-          <div className="card">
-            <div className="card-title"><span className="emoji">💬</span> Σχόλιο / Feedback</div>
-            <div className="form-group">
-              <label className="form-label">Γράψε το σχόλιό σου</label>
-              <textarea placeholder="Πώς πήγε η μέρα σου; Υπάρχει κάτι που θέλεις να μοιραστείς με τη Λαμπρινή;" value={feedback} onChange={e => setFeedback(e.target.value)} style={{minHeight:120}}/>
-            </div>
-          </div>
-        )}
-        <button className="save-btn" onClick={saveAll} disabled={saving}>
-          {saving ? "Αποθήκευση..." : "💾 Αποθήκευση Ημέρας"}
-        </button>
-        </>}
-      </div>
-      {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
+      <Card className="p-4 space-y-3">
+        <p className="text-sm font-semibold text-gray-700">Google Apps Script URL</p>
+        <p className="text-xs text-gray-400">Το URL που πήρες όταν έκανες Deploy → Web App στο Google Apps Script.</p>
+        <textarea value={url} onChange={e=>setUrl(e.target.value)} rows={3}
+          placeholder="https://script.google.com/macros/s/..."
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none" />
+        <Btn onClick={save} className="w-full">{saved ? "✓ Αποθηκεύτηκε!" : "Αποθήκευση"}</Btn>
+      </Card>
+      <Card className="p-4">
+        <p className="text-sm font-semibold text-gray-700 mb-2">Λογαριασμός</p>
+        <Btn onClick={logout} variant="danger" className="w-full">Αποσύνδεση</Btn>
+      </Card>
     </div>
   );
 }
 
-function CoachApp() {
-  const [authenticated, setAuthenticated] = useState(false);
-  const [password, setPassword] = useState("");
-  const [authError, setAuthError] = useState("");
-  const [clients, setClients] = useState([]);
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [clientData, setClientData] = useState(null);
-  const [view, setView] = useState("list");
+// ─── LOGIN VIEW ───────────────────────────────────────────────────────────────
+function LoginView({ onLogin }) {
+  const [mode, setMode] = useState("client");
+  const [token, setToken] = useState("");
+  const [pass, setPass] = useState("");
   const [loading, setLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(todayStr());
-  const [toast, setToast] = useState(null);
-  const [newClientName, setNewClientName] = useState("");
-  const [newClientLink, setNewClientLink] = useState(null);
-  const [addingClient, setAddingClient] = useState(false);
+  const [error, setError] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
 
-  const login = async () => {
-    const r = await api("coachAuth", { password }, "POST");
-    if (r.success) { setAuthenticated(true); loadClients(password); }
-    else setAuthError("Λάθος κωδικός");
-  };
+  if (showSettings) return <SettingsView onBack={()=>setShowSettings(false)} />;
 
-  const loadClients = async (pwd = password) => {
-    setLoading(true);
-    const r = await api("getAllClients", { coachPassword: pwd });
-    if (r.success) setClients(r.data);
+  const loginClient = async () => {
+    if (!token.trim()) return setError("Εισήγαγε το token σου");
+    setLoading(true); setError("");
+    try {
+      const data = await api("getClient", { token: token.trim() });
+      ls.set(STORAGE.TOKEN, token.trim());
+      ls.set(STORAGE.NAME, data.name);
+      onLogin({ type:"client", token: token.trim(), name: data.name });
+    } catch(e) { setError(e.message); }
     setLoading(false);
   };
-
-  const openClient = async (client) => {
-    setSelectedClient(client);
-    setView("client");
-    setLoading(true);
-    const r = await api("getClientHistory", { coachPassword: password, clientId: client.clientId });
-    if (r.success) setClientData(r.data);
+  const loginCoach = async () => {
+    if (!pass.trim()) return setError("Εισήγαγε τον κωδικό");
+    setLoading(true); setError("");
+    try {
+      await api("coachAuth", { password: pass.trim() }, "POST");
+      ls.set(STORAGE.COACH, pass.trim());
+      onLogin({ type:"coach", password: pass.trim() });
+    } catch(e) { setError(e.message); }
     setLoading(false);
   };
-
-  const addClient = async () => {
-    if (!newClientName.trim()) return;
-    setAddingClient(true);
-    const r = await api("addClient", { coachPassword: password, name: newClientName.trim() }, "POST");
-    if (r.success) {
-      const link = `${window.location.origin}${window.location.pathname}?client=${r.data.token}`;
-      setNewClientLink({ link, name: r.data.name });
-      loadClients();
-      setNewClientName("");
-    }
-    setAddingClient(false);
-  };
-
-  const copyLink = (link) => {
-    navigator.clipboard.writeText(link).then(() => setToast("✅ Ο σύνδεσμός αντιγράφηκε!"));
-  };
-
-  if (!authenticated) {
-    return (
-      <div className="login-wrap">
-        <div className="login-card">
-          <div className="login-logo">
-            <div className="icon">🌿</div>
-            <h2>Πίνακας Coach</h2>
-            <p>Λαμπρινή, καλώς ήρθες!</p>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Κωδικός</label>
-            <input type="password" placeholder="Εισάγετε κωδικό" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key==="Enter" && login()}/>
-          </div>
-          {authError && <div style={{color:"var(--red)",fontSize:13,marginBottom:12}}>{authError}</div>}
-          <button className="save-btn" onClick={login}>Είσοδος</button>
-        </div>
-      </div>
-    );
-  }
-
-  if (view === "client" && selectedClient) {
-    const allDates = clientData ? [...new Set([
-      ...(clientData.habits||[]).map(r=>r.date),
-      ...(clientData.foodLog||[]).map(r=>r.date),
-      ...(clientData.feedback||[]).map(r=>r.date),
-    ])].sort().reverse() : [];
-    const dayHabits = clientData?.habits?.filter(r => r.date===selectedDate) || [];
-    const dayFood   = clientData?.foodLog?.filter(r => r.date===selectedDate) || [];
-    const dayFeedback = clientData?.feedback?.find(r => r.date===selectedDate);
-    const doneHabits  = dayHabits.filter(r => r.done===true||r.done==="TRUE");
-
-    return (
-      <div className="app">
-        <div className="header">
-          <button className="back-btn" onClick={() => { setView("list"); setClientData(null); }}>‹</button>
-          <div><h1>{selectedClient.name}</h1><div className="sub">Προβολή δεδομένων</div></div>
-        </div>
-        <div className="content">
-          {loading ? <div className="spinner"/> : <>
-          <div className="date-nav">
-            <button onClick={() => setSelectedDate(addDays(selectedDate,-1))}>‹</button>
-            <div className="date-str">{fmtDate(selectedDate)}</div>
-            <button onClick={() => setSelectedDate(addDays(selectedDate,1))}>›</button>
-          </div>
-          <div className="card">
-            <div className="card-title"><span className="emoji">✅</span> Συνήθειες {doneHabits.length}/{HABITS.length}</div>
-            <div className="progress-bar"><div className="progress-fill" style={{width:`${(doneHabits.length/HABITS.length)*100}%`}}/></div>
-            <div style={{marginTop:14}} className="habit-summary">
-              {HABITS.map(h => {
-                const row = dayHabits.find(r => r.habit===h.id);
-                const done = row && (row.done===true||row.done==="TRUE");
-                return <div key={h.id} className={`habit-chip ${done?"done":""}`}>{h.label.split(" ").slice(1).join(" ")}</div>;
-              })}
-            </div>
-          </div>
-          {dayFood.length > 0 && (
-            <div className="card">
-              <div className="card-title"><span className="emoji">🍽️</span> Γεύματα</div>
-              <table className="data-table">
-                <thead><tr><th>Ώρα</th><th>Τροφή</th><th>Πείνα</th><th>Συναισθήματα</th></tr></thead>
-                <tbody>{dayFood.map((row,i) => (
-                  <tr key={i}>
-                    <td>{row.time||"—"}</td>
-                    <td>{row.food||"—"}{row.portion ? <span style={{fontSize:11,color:"var(--muted)"}}>  {row.portion}</span> : ""}</td>
-                    <td><span className="score-pill">{row.hungerScore!==""?row.hungerScore:"—"}</span></td>
-                    <td style={{fontSize:12,color:"var(--muted)",maxWidth:120}}>{row.emotions||"—"}</td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
-          )}
-          {dayFeedback?.comment && (
-            <div className="card">
-              <div className="card-title"><span className="emoji">💬</span> Σχόλιο</div>
-              <div style={{fontSize:14,lineHeight:1.6,color:"var(--text)"}}>{dayFeedback.comment}</div>
-            </div>
-          )}
-          {(() => {
-            const d = new Date(selectedDate+"T12:00:00");
-            const day = d.getDay();
-            const diff = day===0 ? -6 : 1-day;
-            d.setDate(d.getDate()+diff);
-            const ws = d.toISOString().split("T")[0];
-            const freqRows = clientData?.foodFreq?.filter(r=>r.weekStart===ws)||[];
-            if (!freqRows.length) return null;
-            return (
-              <div className="card">
-                <div className="card-title"><span className="emoji">📊</span> Εβδομαδιαία Συχνότητα</div>
-                {FOOD_CATEGORIES.map(cat => {
-                  const row = freqRows.find(r=>r.category===cat.id);
-                  const count = row ? parseInt(row.count)||0 : 0;
-                  if (!count) return null;
-                  return <div key={cat.id} className="freq-row"><div className="freq-label">{cat.label}</div><span className="badge badge-blue">{count}×</span></div>;
-                })}
-              </div>
-            );
-          })()}
-          {dayHabits.length===0 && dayFood.length===0 && !dayFeedback && (
-            <div className="empty-state"><div className="icon">📭</div><p>Δεν υπάρχουν δεδομένα για αυτή την ημέρα.</p></div>
-          )}
-          {allDates.length > 0 && (
-            <div className="card">
-              <div className="section-header">Ημέρες με καταγραφές</div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                {allDates.map(d => (
-                  <button key={d} onClick={() => setSelectedDate(d)}
-                    style={{padding:"6px 10px",border:`1.5px solid ${d===selectedDate?"var(--primary)":"var(--border)"}`,borderRadius:8,background:d===selectedDate?"var(--primary)":"white",color:d===selectedDate?"white":"var(--text)",fontSize:12,cursor:"pointer",fontWeight:600}}>
-                    {fmtDate(d)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          </>}
-        </div>
-        {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
-      </div>
-    );
-  }
 
   return (
-    <div className="app">
-      <div className="header">
-        <div className="emoji" style={{fontSize:24}}>🌿</div>
-        <div style={{flex:1}}><div className="sub">Καλώς ήρθες, Λαμπρινή</div><h1>Πίνακας Coach</h1></div>
-      </div>
-      <div className="content">
-        <div className="card">
-          <div className="card-title"><span className="emoji">➕</span> Νέος Πελάτης</div>
-          <div style={{display:"flex",gap:8}}>
-            <input placeholder="Όνομα πελάτη" value={newClientName} onChange={e => setNewClientName(e.target.value)} onKeyDown={e => e.key==="Enter" && addClient()} style={{flex:1}}/>
-            <button onClick={addClient} disabled={addingClient || !newClientName.trim()} style={{padding:"10px 16px",background:"var(--primary)",color:"white",border:"none",borderRadius:10,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}>
-              {addingClient ? "..." : "Δημιουργία"}
-            </button>
-          </div>
-          {newClientLink && (
-            <div style={{marginTop:12}}>
-              <div style={{fontSize:13,fontWeight:700,marginBottom:6,color:"var(--green)"}}>✅ Ο σύνδεσμος για τον/την {newClientLink.name}:</div>
-              <div className="link-box">{newClientLink.link}</div>
-              <button className="copy-btn" onClick={() => copyLink(newClientLink.link)}>📋 Αντιγραφή Συνδέσμου</button>
-              <div style={{fontSize:11,color:"var(--muted)",marginTop:6}}>Στείλε αυτόν τον σύνδεσμο στον πελάτη σου (WhatsApp, email κ.λπ.)</div>
-            </div>
-          )}
+    <div className="min-h-screen flex flex-col items-center justify-center p-5 bg-gradient-to-br from-violet-50 to-fuchsia-50">
+      <div className="w-full max-w-sm space-y-6">
+        {/* Logo */}
+        <div className="text-center space-y-1">
+          <div className="text-4xl">🌿</div>
+          <h1 className="text-2xl font-bold text-gray-800">Health Tracker</h1>
+          <p className="text-sm text-gray-400">Let's Thrive for Life</p>
         </div>
-        <div className="section-header">Πελάτες ({clients.length})</div>
-        {loading ? <div className="spinner"/> : (
-          clients.length === 0
-            ? <div className="empty-state"><div className="icon">👥</div><p>Δεν υπάρχουν πελάτες ακόμα.</p></div>
-            : <div className="coach-client-list">
-                {clients.map(c => {
-                  const initials = c.name.split(" ").map(w=>w[0]).join("").toUpperCase().substring(0,2);
+
+        {/* Mode toggle */}
+        <div className="flex bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
+          {[["client","Πελάτης"],["coach","Coach"]].map(([v,l])=>(
+            <button key={v} onClick={()=>{setMode(v);setError("");}}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${mode===v?"bg-violet-600 text-white shadow":"text-gray-500"}`}>{l}</button>
+          ))}
+        </div>
+
+        <Card className="p-5 space-y-4">
+          {mode==="client" ? (
+            <>
+              <div>
+                <label className="text-xs text-gray-500 font-medium mb-1 block">Token Πρόσβασης</label>
+                <input value={token} onChange={e=>setToken(e.target.value)} onKeyDown={e=>e.key==="Enter"&&loginClient()}
+                  placeholder="Π.χ. a3f9b2c1d4e5f6a7"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm" />
+                <p className="text-xs text-gray-400 mt-1.5">Το token σου στο έδωσε η διαιτολόγος σου.</p>
+              </div>
+              {error && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+              <Btn onClick={loginClient} disabled={loading} size="lg" className="w-full">
+                {loading ? <Spinner/> : "Είσοδος"}
+              </Btn>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="text-xs text-gray-500 font-medium mb-1 block">Κωδικός Coach</label>
+                <input type="password" value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&loginCoach()}
+                  placeholder="••••••••"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm" />
+              </div>
+              {error && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+              <Btn onClick={loginCoach} disabled={loading} size="lg" className="w-full">
+                {loading ? <Spinner/> : "Είσοδος Coach"}
+              </Btn>
+            </>
+          )}
+        </Card>
+
+        <button onClick={()=>setShowSettings(true)} className="mx-auto flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+          ⚙ Ρυθμίσεις API
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── HABIT TRACKER ────────────────────────────────────────────────────────────
+function HabitTab({ token, date, initialData, onSave }) {
+  const [habits, setHabits] = useState(() => {
+    if (initialData?.length) return initialData.map(h=>({ habit:h.habit, done: h.done==="TRUE"||h.done===true }));
+    return DEFAULT_HABITS.map(h=>({ habit:h, done:false }));
+  });
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const toggle = i => setHabits(p=>p.map((h,idx)=>idx===i?{...h,done:!h.done}:h));
+  const done = habits.filter(h=>h.done).length;
+  const pct = Math.round(done/habits.length*100);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await api("saveHabits", { token, date, habits }, "POST");
+      setToast("Αποθηκεύτηκε! ✓");
+      onSave && onSave();
+    } catch(e) { setToast("Σφάλμα: "+e.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div className="space-y-4 fade-in">
+      {toast && <Toast msg={toast} type={toast.includes("Σφάλμα")?"error":"success"} onClose={()=>setToast(null)} />}
+
+      {/* Progress */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm font-semibold text-gray-700">Πρόοδος σήμερα</p>
+          <p className="text-sm font-bold text-violet-600">{done}/{habits.length}</p>
+        </div>
+        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all duration-500"
+            style={{width:`${pct}%`}} />
+        </div>
+        <p className="text-xs text-gray-400 mt-1.5">
+          {pct===100 ? "🎉 Τέλεια! Όλες οι συνήθειες για σήμερα!" : pct>=60 ? "💪 Πολύ καλή πρόοδος!" : pct>=30 ? "🌱 Συνέχισε έτσι!" : "Ξεκίνα σήμερα — κάθε βήμα μετράει!"}
+        </p>
+      </Card>
+
+      {/* Habit list */}
+      <Card className="divide-y divide-gray-50">
+        {habits.map((h,i) => (
+          <button key={i} onClick={()=>toggle(i)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-50 active:bg-gray-100">
+            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all
+              ${h.done ? "bg-violet-600 border-violet-600" : "border-gray-300"}`}>
+              {h.done && <span className="text-white text-xs">✓</span>}
+            </div>
+            <p className={`text-sm ${h.done?"text-gray-400 line-through":"text-gray-700"}`}>{h.habit}</p>
+          </button>
+        ))}
+      </Card>
+
+      <Btn onClick={save} disabled={saving} className="w-full" size="lg">
+        {saving ? <><Spinner/>Αποθήκευση...</> : "Αποθήκευση Habits"}
+      </Btn>
+    </div>
+  );
+}
+
+// ─── FOOD LOG ─────────────────────────────────────────────────────────────────
+const EMPTY_ENTRY = () => ({ time:"", food:"", portion:"", energyCal:"", hungerScore:5, emotions:[] });
+
+function FoodLogTab({ token, date, initialData, onSave }) {
+  const [entries, setEntries] = useState(()=>
+    initialData?.length ? initialData.map(e=>({...e, hungerScore:parseInt(e.hungerScore)||5, emotions:typeof e.emotions==="string"&&e.emotions?e.emotions.split("|"):[]}))
+    : [EMPTY_ENTRY()]
+  );
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  const upd = (i,k,v) => setEntries(p=>p.map((e,idx)=>idx===i?{...e,[k]:v}:e));
+  const addEntry = () => { setEntries(p=>[...p, EMPTY_ENTRY()]); setActiveIdx(entries.length); };
+  const delEntry = i => { setEntries(p=>p.filter((_,idx)=>idx!==i)); setActiveIdx(Math.max(0,activeIdx-1)); };
+  const toggleEmotion = (i,em) => {
+    setEntries(p=>p.map((e,idx)=>idx!==i?e:{...e,emotions:e.emotions.includes(em)?e.emotions.filter(x=>x!==em):[...e.emotions,em]}));
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const payload = entries.map(e=>({...e, emotions:Array.isArray(e.emotions)?e.emotions.join("|"):e.emotions}));
+      await api("saveFoodLog", { token, date, entries:payload }, "POST");
+      setToast("Αποθηκεύτηκε! ✓");
+      onSave && onSave();
+    } catch(e) { setToast("Σφάλμα: "+e.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div className="space-y-4 fade-in">
+      {toast && <Toast msg={toast} type={toast.includes("Σφάλμα")?"error":"success"} onClose={()=>setToast(null)} />}
+
+      {/* Entry tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {entries.map((_,i)=>(
+          <button key={i} onClick={()=>setActiveIdx(i)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors
+              ${activeIdx===i?"bg-violet-600 text-white":"bg-white border border-gray-200 text-gray-500"}`}>
+            Γεύμα {i+1}
+          </button>
+        ))}
+        <button onClick={addEntry} className="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium bg-white border border-dashed border-gray-300 text-gray-400 hover:border-violet-300 hover:text-violet-500">
+          + Προσθήκη
+        </button>
+      </div>
+
+      {entries.map((e,i)=>i!==activeIdx?null:(
+        <Card key={i} className="p-4 space-y-4 fade-in">
+          <div className="flex justify-between items-center">
+            <p className="text-sm font-semibold text-gray-700">Γεύμα {i+1}</p>
+            {entries.length>1 && <button onClick={()=>delEntry(i)} className="text-red-400 hover:text-red-600 text-xs">Διαγραφή</button>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Ώρα</label>
+              <input type="time" value={e.time} onChange={ev=>upd(i,"time",ev.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Μερίδα</label>
+              <input value={e.portion} onChange={ev=>upd(i,"portion",ev.target.value)} placeholder="π.χ. 1 μεσαία"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm" />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Τι έφαγα / ήπια</label>
+            <textarea value={e.food} onChange={ev=>upd(i,"food",ev.target.value)} rows={2}
+              placeholder="Π.χ. κοτόπουλο με ρύζι και σαλάτα..."
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none" />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Θερμίδες (προαιρετικό)</label>
+            <input type="number" value={e.energyCal} onChange={ev=>upd(i,"energyCal",ev.target.value)} placeholder="kcal"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm" />
+          </div>
+
+          {/* Hunger scale */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-xs text-gray-400">Επίπεδο πείνας / κορεσμού</label>
+              <span className="text-xs font-semibold text-violet-600">{e.hungerScore}/10 — {HUNGER_LABELS[e.hungerScore]||""}</span>
+            </div>
+            <input type="range" min="1" max="10" value={e.hungerScore} onChange={ev=>upd(i,"hungerScore",parseInt(ev.target.value))}
+              className="w-full h-2 rounded-full" />
+            <div className="flex justify-between text-xs text-gray-300 mt-1">
+              <span>Λιμασμένη</span><span>Χορτάτη</span>
+            </div>
+          </div>
+
+          {/* Emotions */}
+          <div>
+            <label className="text-xs text-gray-400 mb-2 block">Συναισθήματα πριν / κατά το φαγητό</label>
+            <div className="flex flex-wrap gap-1.5">
+              {EMOTIONS_OPTIONS.map(em=>(
+                <button key={em} onClick={()=>toggleEmotion(i,em)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors
+                    ${e.emotions.includes(em)?"bg-violet-100 text-violet-700 border border-violet-200":"bg-gray-100 text-gray-500"}`}>
+                  {em}
+                </button>
+              ))}
+            </div>
+          </div>
+        </Card>
+      ))}
+
+      <Btn onClick={save} disabled={saving} className="w-full" size="lg">
+        {saving ? <><Spinner/>Αποθήκευση...</> : "Αποθήκευση Ημερολογίου"}
+      </Btn>
+    </div>
+  );
+}
+
+// ─── FOOD FREQUENCY ───────────────────────────────────────────────────────────
+function FoodFreqTab({ token, date, initialData, onSave }) {
+  const ws = weekStart(date);
+  const [counts, setCounts] = useState(()=>{
+    const m = {};
+    if (initialData?.length) initialData.forEach(r=>{ m[r.category]=r.count; });
+    return m;
+  });
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const setCount = (id,v) => setCounts(p=>({...p,[id]:v}));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const items = FOOD_FREQ_CATS.map(c=>({ category:c.id, count:counts[c.id]||"0" }));
+      await api("saveFoodFrequency", { token, weekStart:ws, items }, "POST");
+      setToast("Αποθηκεύτηκε! ✓");
+      onSave && onSave();
+    } catch(e) { setToast("Σφάλμα: "+e.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div className="space-y-4 fade-in">
+      {toast && <Toast msg={toast} type={toast.includes("Σφάλμα")?"error":"success"} onClose={()=>setToast(null)} />}
+
+      <Card className="p-4">
+        <p className="text-sm font-semibold text-gray-700 mb-0.5">Εβδομαδιαία Συχνότητα Τροφίμων</p>
+        <p className="text-xs text-gray-400">Εβδομάδα: {fmtDate(ws)}</p>
+      </Card>
+
+      <Card className="divide-y divide-gray-50">
+        {FOOD_FREQ_CATS.map(cat=>(
+          <div key={cat.id} className="px-4 py-3.5">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <p className="text-sm font-medium text-gray-700">{cat.label}</p>
+                <p className="text-xs text-gray-400">{cat.hint}</p>
+              </div>
+              <span className="text-lg font-bold text-violet-600 ml-2">{counts[cat.id]||"0"}</span>
+            </div>
+            <div className="flex gap-1.5">
+              {FREQ_OPTIONS.map(v=>(
+                <button key={v} onClick={()=>setCount(cat.id,v)}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors
+                    ${(counts[cat.id]||"0")===v?"bg-violet-600 text-white":"bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </Card>
+
+      <Btn onClick={save} disabled={saving} className="w-full" size="lg">
+        {saving ? <><Spinner/>Αποθήκευση...</> : "Αποθήκευση Συχνότητας"}
+      </Btn>
+    </div>
+  );
+}
+
+// ─── FEEDBACK ─────────────────────────────────────────────────────────────────
+function FeedbackTab({ token, date, initialData, onSave }) {
+  const [comment, setComment] = useState(initialData?.[0]?.comment||"");
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+  const PROMPTS = [
+    "Πώς ένιωσα σήμερα συνολικά;",
+    "Τι πήγε καλά με τη διατροφή μου;",
+    "Τι ήταν δύσκολο σήμερα;",
+    "Κάτι που θέλω να αλλάξω αύριο...",
+  ];
+
+  const save = async () => {
+    if (!comment.trim()) return;
+    setSaving(true);
+    try {
+      await api("saveFeedback", { token, date, comment }, "POST");
+      setToast("Αποθηκεύτηκε! ✓");
+      onSave && onSave();
+    } catch(e) { setToast("Σφάλμα: "+e.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div className="space-y-4 fade-in">
+      {toast && <Toast msg={toast} type={toast.includes("Σφάλμα")?"error":"success"} onClose={()=>setToast(null)} />}
+
+      <Card className="p-4 space-y-4">
+        <div>
+          <p className="text-sm font-semibold text-gray-700 mb-1">Ημερήσιο Σχόλιο / Σκέψη</p>
+          <p className="text-xs text-gray-400">Γράψε ο,τιδήποτε νιώθεις — η coach σου θα το δει.</p>
+        </div>
+
+        <div>
+          <p className="text-xs text-gray-400 mb-2">Ερωτήσεις για σκέψη:</p>
+          <div className="space-y-1.5">
+            {PROMPTS.map(p=>(
+              <button key={p} onClick={()=>setComment(c=>c?c+"\n\n"+p:p)}
+                className="w-full text-left text-xs text-violet-600 bg-violet-50 hover:bg-violet-100 px-3 py-2 rounded-xl transition-colors">
+                + {p}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <textarea value={comment} onChange={e=>setComment(e.target.value)} rows={6}
+          placeholder="Γράψε εδώ τις σκέψεις σου για σήμερα..."
+          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm resize-none" />
+
+        <Btn onClick={save} disabled={saving||!comment.trim()} className="w-full" size="lg">
+          {saving ? <><Spinner/>Αποθήκευση...</> : "Αποθήκευση"}
+        </Btn>
+      </Card>
+    </div>
+  );
+}
+
+// ─── CLIENT APP ───────────────────────────────────────────────────────────────
+function ClientApp({ token, name }) {
+  const [date, setDate] = useState(today());
+  const [tab, setTab] = useState("habits");
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try { setData(await api("getClientData", { token, date })); }
+    catch(e) { console.error(e); }
+    setLoading(false);
+  }, [token, date]);
+
+  useEffect(()=>{ load(); }, [load]);
+
+  const prevDay = () => {
+    const d = new Date(date); d.setDate(d.getDate()-1);
+    setDate(d.toISOString().split("T")[0]);
+  };
+  const nextDay = () => {
+    const d = new Date(date); d.setDate(d.getDate()+1);
+    if (d <= new Date()) setDate(d.toISOString().split("T")[0]);
+  };
+
+  const tabs = [
+    { id:"habits", label:"Habits", icon:"✅" },
+    { id:"food",   label:"Φαγητό", icon:"🍽" },
+    { id:"freq",   label:"Εβδομάδα", icon:"📊" },
+    { id:"notes",  label:"Σκέψεις", icon:"💬" },
+  ];
+
+  if (showSettings) return (
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-lg mx-auto px-4 py-4">
+        <SettingsView onBack={()=>setShowSettings(false)} />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🌿</span>
+            <div>
+              <p className="text-sm font-bold text-gray-800 leading-tight">{name}</p>
+              <p className="text-xs text-gray-400 leading-tight">Health Tracker</p>
+            </div>
+          </div>
+          <button onClick={()=>setShowSettings(true)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded-full">⚙</button>
+        </div>
+      </header>
+
+      <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
+        {/* Date nav */}
+        <div className="flex items-center justify-between bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+          <button onClick={prevDay} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-lg">‹</button>
+          <div className="text-center">
+            <p className="text-sm font-bold text-gray-800">{fmtDate(date)}</p>
+            {date===today()&&<p className="text-xs text-violet-500 font-medium">Σήμερα</p>}
+          </div>
+          <button onClick={nextDay} disabled={date===today()} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-lg disabled:opacity-30">›</button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex bg-white rounded-xl border border-gray-100 shadow-sm p-1 gap-0.5">
+          {tabs.map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)}
+              className={`flex-1 flex flex-col items-center py-2 rounded-lg text-xs font-medium transition-colors
+                ${tab===t.id?"bg-violet-600 text-white":"text-gray-500 hover:bg-gray-50"}`}>
+              <span className="text-base leading-none mb-0.5">{t.icon}</span>
+              <span>{t.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="flex justify-center py-12"><Spinner /></div>
+        ) : (
+          <>
+            {tab==="habits" && <HabitTab token={token} date={date} initialData={data?.habits} onSave={load} />}
+            {tab==="food"   && <FoodLogTab token={token} date={date} initialData={data?.foodLog} onSave={load} />}
+            {tab==="freq"   && <FoodFreqTab token={token} date={date} initialData={data?.foodFreq} onSave={load} />}
+            {tab==="notes"  && <FeedbackTab token={token} date={date} initialData={data?.feedback} onSave={load} />}
+          </>
+        )}
+
+        <div className="h-6" />
+      </div>
+    </div>
+  );
+}
+
+// ─── COACH: CLIENT HISTORY ────────────────────────────────────────────────────
+function ClientHistoryView({ client, password, onBack }) {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+  const [tab, setTab] = useState("habits");
+  const [error, setError] = useState("");
+
+  useEffect(()=>{
+    (async()=>{
+      try {
+        const d = await api("getClientHistory", { coachPassword:password, clientId:client.clientId });
+        setData(d);
+      } catch(e) { setError(e.message); }
+      setLoading(false);
+    })();
+  }, []);
+
+  if (loading) return <div className="flex justify-center py-12"><Spinner /></div>;
+  if (error) return <p className="text-red-500 text-sm p-4">{error}</p>;
+
+  const habitsGrouped = useMemo(()=>{
+    const g = {};
+    (data?.habits||[]).forEach(h=>{ if(!g[h.date])g[h.date]=[]; g[h.date].push(h); });
+    return Object.entries(g).sort((a,b)=>b[0].localeCompare(a[0]));
+  },[data]);
+
+  const foodGrouped = useMemo(()=>{
+    const g = {};
+    (data?.foodLog||[]).forEach(e=>{ if(!g[e.date])g[e.date]=[]; g[e.date].push(e); });
+    return Object.entries(g).sort((a,b)=>b[0].localeCompare(a[0]));
+  },[data]);
+
+  return (
+    <div className="space-y-4 fade-in">
+      <div className="flex items-center gap-3">
+        <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">←</button>
+        <div>
+          <h2 className="font-bold text-gray-800">{client.name}</h2>
+          <p className="text-xs text-gray-400">token: {client.token}</p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+        {[["habits","Habits"],["food","Φαγητό"],["freq","Εβδομάδα"],["feedback","Σχόλια"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setTab(v)} className={`flex-1 py-1.5 rounded-lg text-xs font-medium ${tab===v?"bg-white text-violet-700 shadow":"text-gray-500"}`}>{l}</button>
+        ))}
+      </div>
+
+      {tab==="habits" && (
+        <div className="space-y-3">
+          {habitsGrouped.length===0&&<p className="text-sm text-gray-400 text-center py-8">Δεν υπάρχουν δεδομένα</p>}
+          {habitsGrouped.map(([date,habits])=>{
+            const done = habits.filter(h=>h.done==="TRUE"||h.done===true).length;
+            const pct = habits.length ? Math.round(done/habits.length*100) : 0;
+            return (
+              <Card key={date} className="p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-sm font-semibold text-gray-700">{fmtDate(date)}</p>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pct===100?"bg-emerald-100 text-emerald-700":pct>=60?"bg-violet-100 text-violet-700":"bg-gray-100 text-gray-500"}`}>{done}/{habits.length}</span>
+                </div>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                  <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full" style={{width:`${pct}%`}} />
+                </div>
+                <div className="space-y-1">
+                  {habits.map((h,i)=>(
+                    <div key={i} className="flex items-center gap-2">
+                      <span className={`text-xs ${(h.done==="TRUE"||h.done===true)?"text-emerald-500":"text-gray-300"}`}>{(h.done==="TRUE"||h.done===true)?"✓":"○"}</span>
+                      <p className={`text-xs ${(h.done==="TRUE"||h.done===true)?"text-gray-600":"text-gray-400"}`}>{h.habit}</p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {tab==="food" && (
+        <div className="space-y-3">
+          {foodGrouped.length===0&&<p className="text-sm text-gray-400 text-center py-8">Δεν υπάρχουν δεδομένα</p>}
+          {foodGrouped.map(([date,entries])=>(
+            <Card key={date} className="p-4">
+              <p className="text-sm font-semibold text-gray-700 mb-3">{fmtDate(date)}</p>
+              {entries.map((e,i)=>(
+                <div key={i} className="border-b border-gray-50 last:border-0 pb-3 last:pb-0 mb-3 last:mb-0">
+                  <div className="flex gap-2 text-xs text-gray-400 mb-1">
+                    {e.time&&<span>🕐 {e.time}</span>}
+                    {e.hungerScore&&<span>Κορεσμός: {e.hungerScore}/10</span>}
+                    {e.energyCal&&<span>⚡ {e.energyCal} kcal</span>}
+                  </div>
+                  {e.food&&<p className="text-sm text-gray-700">{e.food}</p>}
+                  {e.portion&&<p className="text-xs text-gray-400">Μερίδα: {e.portion}</p>}
+                  {e.emotions&&<p className="text-xs text-violet-500 mt-1">💭 {e.emotions}</p>}
+                </div>
+              ))}
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {tab==="freq" && (
+        <div className="space-y-3">
+          {(data?.foodFreq||[]).length===0&&<p className="text-sm text-gray-400 text-center py-8">Δεν υπάρχουν δεδομένα</p>}
+          {Object.entries(
+            (data?.foodFreq||[]).reduce((g,r)=>{ if(!g[r.weekStart])g[r.weekStart]=[]; g[r.weekStart].push(r); return g; },{})
+          ).sort((a,b)=>b[0].localeCompare(a[0])).map(([ws,items])=>(
+            <Card key={ws} className="p-4">
+              <p className="text-sm font-semibold text-gray-700 mb-3">Εβδομάδα {fmtDate(ws)}</p>
+              <div className="space-y-2">
+                {items.map((r,i)=>{
+                  const cat = FOOD_FREQ_CATS.find(c=>c.id===r.category);
                   return (
-                    <div key={c.clientId} className="client-item" onClick={() => openClient(c)}>
-                      <div className="client-avatar">{initials}</div>
-                      <div><div className="client-name">{c.name}</div><div className="client-meta">Από {c.createdAt ? new Date(c.createdAt).toLocaleDateString("el-GR") : "—"}</div></div>
-                      <div style={{marginLeft:"auto",fontSize:20,color:"var(--muted)"}}>›</div>
+                    <div key={i} className="flex items-center gap-3">
+                      <p className="text-sm flex-1 text-gray-600">{cat?.label||r.category}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-20 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-violet-400 rounded-full" style={{width:`${Math.min(100,(parseInt(r.count)||0)/7*100)}%`}} />
+                        </div>
+                        <span className="text-xs font-bold text-violet-600 w-4">{r.count}</span>
+                      </div>
                     </div>
                   );
                 })}
               </div>
-        )}
-        <button className="save-btn" style={{background:"#f0f4ff",color:"var(--primary)",boxShadow:"none"}} onClick={() => loadClients()}>🔄 Ανανέωση</button>
-      </div>
-      {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {tab==="feedback" && (
+        <div className="space-y-3">
+          {(data?.feedback||[]).length===0&&<p className="text-sm text-gray-400 text-center py-8">Δεν υπάρχουν σχόλια</p>}
+          {[...(data?.feedback||[])].sort((a,b)=>b.date?.localeCompare(a.date)).map((f,i)=>(
+            <Card key={i} className="p-4">
+              <p className="text-xs text-gray-400 mb-1">{fmtDate(f.date)}</p>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{f.comment}</p>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-function App() {
-  const params = new URLSearchParams(window.location.search);
-  const clientToken = params.get("client");
-  const isCoach = params.get("coach") !== null || !clientToken;
-  if (!isCoach && clientToken) return <ClientApp token={clientToken}/>;
-  return <CoachApp/>;
+// ─── COACH APP ────────────────────────────────────────────────────────────────
+function CoachApp({ password }) {
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selected, setSelected] = useState(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const loadClients = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api("getAllClients", { coachPassword:password });
+      setClients(Array.isArray(data)?data:[]);
+    } catch(e) { setError(e.message); }
+    setLoading(false);
+  }, [password]);
+
+  useEffect(()=>{ loadClients(); }, [loadClients]);
+
+  const addClient = async () => {
+    if (!newName.trim()) return;
+    setAdding(true);
+    try {
+      const d = await api("addClient", { coachPassword:password, name:newName.trim() }, "POST");
+      setToast(`✓ Πελάτης προστέθηκε! Token: ${d.token}`);
+      setNewName(""); setShowAdd(false);
+      loadClients();
+    } catch(e) { setToast("Σφάλμα: "+e.message); }
+    setAdding(false);
+  };
+
+  const logout = () => { ls.del(STORAGE.COACH); window.location.reload(); };
+
+  if (showSettings) return (
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-2xl mx-auto px-4 py-4">
+        <SettingsView onBack={()=>setShowSettings(false)} />
+      </div>
+    </div>
+  );
+
+  if (selected) return (
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-2xl mx-auto px-4 py-4">
+        <ClientHistoryView client={selected} password={password} onBack={()=>setSelected(null)} />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {toast && <Toast msg={toast} type={toast.includes("Σφάλμα")?"error":"success"} onClose={()=>setToast(null)} />}
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🌿</span>
+            <div>
+              <p className="text-sm font-bold text-gray-800">Coach Dashboard</p>
+              <p className="text-xs text-gray-400">Let's Thrive for Life</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={()=>setShowSettings(true)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded-full">⚙</button>
+            <button onClick={logout} className="text-xs text-gray-400 border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50">Έξοδος</button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="p-4 text-center">
+            <p className="text-2xl font-bold text-violet-600">{clients.length}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Ενεργοί Πελάτες</p>
+          </Card>
+          <Card className="p-4 flex items-center justify-center">
+            <Btn onClick={()=>setShowAdd(p=>!p)} size="sm">+ Νέος Πελάτης</Btn>
+          </Card>
+        </div>
+
+        {/* Add client form */}
+        {showAdd && (
+          <Card className="p-4 space-y-3 fade-in">
+            <p className="text-sm font-semibold text-gray-700">Προσθήκη Πελάτη</p>
+            <input value={newName} onChange={e=>setNewName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addClient()}
+              placeholder="Όνομα πελάτη" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm" />
+            <div className="flex gap-2">
+              <Btn onClick={addClient} disabled={adding||!newName.trim()} className="flex-1">
+                {adding?<Spinner/>:"Δημιουργία"}
+              </Btn>
+              <Btn onClick={()=>setShowAdd(false)} variant="outline">Ακύρωση</Btn>
+            </div>
+            <p className="text-xs text-gray-400">Μετά τη δημιουργία θα εμφανιστεί το μοναδικό token — αντέγραψέ το και στείλτο στον πελάτη.</p>
+          </Card>
+        )}
+
+        {/* Client list */}
+        <Card className="divide-y divide-gray-50">
+          <div className="px-4 py-3 flex justify-between items-center">
+            <p className="text-sm font-semibold text-gray-700">Πελάτες</p>
+            <button onClick={loadClients} className="text-xs text-violet-500 hover:text-violet-700">↻ Ανανέωση</button>
+          </div>
+          {loading ? (
+            <div className="flex justify-center py-8"><Spinner /></div>
+          ) : error ? (
+            <p className="text-sm text-red-500 px-4 py-4">{error}</p>
+          ) : clients.length===0 ? (
+            <p className="text-sm text-gray-400 text-center py-8">Δεν υπάρχουν πελάτες ακόμα</p>
+          ) : clients.map(c=>(
+            <button key={c.clientId} onClick={()=>setSelected(c)}
+              className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 text-left transition-colors">
+              <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center text-sm font-bold text-violet-600 flex-shrink-0">
+                {c.name?.[0]?.toUpperCase()||"?"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-800">{c.name}</p>
+                <p className="text-xs text-gray-400 truncate">token: {c.token}</p>
+              </div>
+              <span className="text-gray-300">›</span>
+            </button>
+          ))}
+        </Card>
+
+        <div className="h-6" />
+      </div>
+    </div>
+  );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+// ─── ROOT ─────────────────────────────────────────────────────────────────────
+function App() {
+  const [session, setSession] = useState(()=>{
+    const token = ls.get(STORAGE.TOKEN);
+    const name  = ls.get(STORAGE.NAME);
+    const coach = ls.get(STORAGE.COACH);
+    if (token && name) return { type:"client", token, name };
+    if (coach) return { type:"coach", password:coach };
+    return null;
+  });
+
+  if (!session) return <LoginView onLogin={setSession} />;
+  if (session.type==="coach") return <CoachApp password={session.password} />;
+  return <ClientApp token={session.token} name={session.name} />;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
