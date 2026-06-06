@@ -540,12 +540,54 @@ function FeedbackTab({ token, date, initialData, onSave }) {
 }
 
 // ─── CLIENT APP ───────────────────────────────────────────────────────────────
+// ─── CLIENT: COACH NOTES TAB ──────────────────────────────────────────────────
+function CoachNotesTab({ notes }) {
+  if (!notes || notes.length === 0) return (
+    <Card className="p-6 text-center">
+      <p className="text-3xl mb-3">💌</p>
+      <p className="text-sm text-gray-500">Δεν υπάρχουν μηνύματα ακόμα από την Coach σου.</p>
+      <p className="text-xs text-gray-400 mt-1">Θα εμφανιστούν εδώ όταν η Lambrini αφήσει σχόλιο για σένα!</p>
+    </Card>
+  );
+  return (
+    <div className="space-y-3">
+      {[...notes].sort((a,b)=>b.date?.localeCompare(a.date)).map((n,i)=>(
+        <Card key={i} className="p-4 border-l-4 border-l-violet-400">
+          <p className="text-xs font-semibold text-violet-500 mb-1">{fmtDate(n.date)}</p>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap">{n.note}</p>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 function ClientApp({ token, name }) {
   const [date, setDate] = useState(today());
   const [tab, setTab] = useState("habits");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [coachNotes, setCoachNotes] = useState([]);
+  const [hasUnread, setHasUnread] = useState(false);
+  const [showBanner, setShowBanner] = useState(false);
+
+  const LAST_SEEN_KEY = "ht_coach_notes_seen_" + token;
+
+  const loadCoachNotes = useCallback(async () => {
+    try {
+      const result = await api("getCoachNotes", { token });
+      const notes = result?.notes || [];
+      setCoachNotes(notes);
+      if (notes.length > 0) {
+        const lastSeen = localStorage.getItem(LAST_SEEN_KEY) || "";
+        const latest = notes.reduce((a,b)=> (b.savedAt||"") > (a.savedAt||"") ? b : a, notes[0]);
+        if ((latest.savedAt||"") > lastSeen) {
+          setHasUnread(true);
+          setShowBanner(true);
+        }
+      }
+    } catch(e) { console.error("coach notes:", e); }
+  }, [token]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -555,6 +597,17 @@ function ClientApp({ token, name }) {
   }, [token, date]);
 
   useEffect(()=>{ load(); }, [load]);
+  useEffect(()=>{ loadCoachNotes(); }, [loadCoachNotes]);
+
+  const openCoachTab = () => {
+    setTab("coach");
+    setHasUnread(false);
+    setShowBanner(false);
+    if (coachNotes.length > 0) {
+      const latest = coachNotes.reduce((a,b)=> (b.savedAt||"") > (a.savedAt||"") ? b : a, coachNotes[0]);
+      localStorage.setItem(LAST_SEEN_KEY, latest.savedAt||"");
+    }
+  };
 
   const prevDay = () => {
     const d = new Date(date); d.setDate(d.getDate()-1);
@@ -566,10 +619,11 @@ function ClientApp({ token, name }) {
   };
 
   const tabs = [
-    { id:"habits", label:"Habits", icon:"✅" },
-    { id:"food",   label:"Φαγητό", icon:"🍽" },
+    { id:"habits", label:"Habits",    icon:"✅" },
+    { id:"food",   label:"Φαγητό",   icon:"🍽" },
     { id:"freq",   label:"Εβδομάδα", icon:"📊" },
-    { id:"notes",  label:"Σκέψεις", icon:"💬" },
+    { id:"notes",  label:"Σκέψεις",  icon:"💬" },
+    { id:"coach",  label:"Coach",     icon:"💌", unread: hasUnread, onClick: openCoachTab },
   ];
 
   if (showSettings) return (
@@ -596,31 +650,52 @@ function ClientApp({ token, name }) {
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
-        {/* Date nav */}
-        <div className="flex items-center justify-between bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
-          <button onClick={prevDay} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-lg">‹</button>
-          <div className="text-center">
-            <p className="text-sm font-bold text-gray-800">{fmtDate(date)}</p>
-            {date===today()&&<p className="text-xs text-violet-500 font-medium">Σήμερα</p>}
+      {/* Coach notification banner */}
+      {showBanner && (
+        <div className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white px-4 py-3 flex items-center justify-between gap-3 shadow-md">
+          <div className="flex items-center gap-2 flex-1">
+            <span className="text-lg">💌</span>
+            <p className="text-sm font-medium">Έχεις νέο μήνυμα από την Coach σου!</p>
           </div>
-          <button onClick={nextDay} disabled={date===today()} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-lg disabled:opacity-30">›</button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={openCoachTab} className="text-xs font-bold bg-white text-violet-600 px-3 py-1 rounded-full">Δες το</button>
+            <button onClick={()=>setShowBanner(false)} className="text-white/70 hover:text-white text-lg leading-none">×</button>
+          </div>
         </div>
+      )}
+
+      <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
+        {/* Date nav — hidden on coach tab */}
+        {tab !== "coach" && (
+          <div className="flex items-center justify-between bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+            <button onClick={prevDay} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-lg">‹</button>
+            <div className="text-center">
+              <p className="text-sm font-bold text-gray-800">{fmtDate(date)}</p>
+              {date===today()&&<p className="text-xs text-violet-500 font-medium">Σήμερα</p>}
+            </div>
+            <button onClick={nextDay} disabled={date===today()} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-lg disabled:opacity-30">›</button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex bg-white rounded-xl border border-gray-100 shadow-sm p-1 gap-0.5">
           {tabs.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)}
-              className={`flex-1 flex flex-col items-center py-2 rounded-lg text-xs font-medium transition-colors
+            <button key={t.id} onClick={t.onClick || (()=>setTab(t.id))}
+              className={`flex-1 flex flex-col items-center py-2 rounded-lg text-xs font-medium transition-colors relative
                 ${tab===t.id?"bg-violet-600 text-white":"text-gray-500 hover:bg-gray-50"}`}>
-              <span className="text-base leading-none mb-0.5">{t.icon}</span>
+              <span className="text-base leading-none mb-0.5 relative">
+                {t.icon}
+                {t.unread && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />}
+              </span>
               <span>{t.label}</span>
             </button>
           ))}
         </div>
 
         {/* Content */}
-        {loading ? (
+        {tab === "coach" ? (
+          <CoachNotesTab notes={coachNotes} />
+        ) : loading ? (
           <div className="flex justify-center py-12"><Spinner /></div>
         ) : (
           <>
@@ -643,16 +718,20 @@ function ClientHistoryView({ client, password, onBack }) {
   const [data, setData] = useState(null);
   const [tab, setTab] = useState("habits");
   const [error, setError] = useState("");
+  const [noteDate, setNoteDate] = useState(today());
+  const [noteText, setNoteText] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+  const [noteToast, setNoteToast] = useState(null);
 
-  useEffect(()=>{
-    (async()=>{
-      try {
-        const d = await api("getClientHistory", { coachPassword:password, clientId:client.clientId });
-        setData(d);
-      } catch(e) { setError(e.message); }
-      setLoading(false);
-    })();
-  }, []);
+  const load = async () => {
+    try {
+      const d = await api("getClientHistory", { coachPassword:password, clientId:client.clientId });
+      setData(d);
+    } catch(e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  useEffect(()=>{ load(); }, []);
 
   const habitsGrouped = useMemo(()=>{
     const g = {};
@@ -666,11 +745,34 @@ function ClientHistoryView({ client, password, onBack }) {
     return Object.entries(g).sort((a,b)=>b[0].localeCompare(a[0]));
   },[data]);
 
+  const coachNotesGrouped = useMemo(()=>{
+    return [...(data?.coachNotes||[])].sort((a,b)=>b.date?.localeCompare(a.date));
+  },[data]);
+
+  // Prefill note when switching date
+  useEffect(()=>{
+    const existing = (data?.coachNotes||[]).find(n=>n.date===noteDate);
+    setNoteText(existing?.note||"");
+  },[noteDate, data]);
+
+  const saveNote = async () => {
+    if (!noteText.trim()) return;
+    setSavingNote(true);
+    try {
+      await api("saveCoachNote", { coachPassword:password, clientId:client.clientId, date:noteDate, note:noteText }, "POST");
+      setNoteToast("✓ Το σχόλιο αποθηκεύτηκε!");
+      load();
+    } catch(e) { setNoteToast("Σφάλμα: "+e.message); }
+    setSavingNote(false);
+  };
+
   if (loading) return <div className="flex justify-center py-12"><Spinner /></div>;
   if (error) return <p className="text-red-500 text-sm p-4">{error}</p>;
 
   return (
     <div className="space-y-4 fade-in">
+      {noteToast && <Toast msg={noteToast} type={noteToast.includes("Σφάλμα")?"error":"success"} onClose={()=>setNoteToast(null)} />}
+
       <div className="flex items-center gap-3">
         <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">←</button>
         <div>
@@ -680,9 +782,9 @@ function ClientHistoryView({ client, password, onBack }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
-        {[["habits","Habits"],["food","Φαγητό"],["freq","Εβδομάδα"],["feedback","Σχόλια"]].map(([v,l])=>(
-          <button key={v} onClick={()=>setTab(v)} className={`flex-1 py-1.5 rounded-lg text-xs font-medium ${tab===v?"bg-white text-violet-700 shadow":"text-gray-500"}`}>{l}</button>
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
+        {[["habits","Habits"],["food","Φαγητό"],["freq","Εβδομάδα"],["feedback","Σκέψεις"],["coachnotes","✍️ Σχόλιά μου"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setTab(v)} className={`flex-shrink-0 flex-1 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${tab===v?"bg-white text-violet-700 shadow":"text-gray-500"}`}>{l}</button>
         ))}
       </div>
 
@@ -774,6 +876,41 @@ function ClientHistoryView({ client, password, onBack }) {
             <Card key={i} className="p-4">
               <p className="text-xs text-gray-400 mb-1">{fmtDate(f.date)}</p>
               <p className="text-sm text-gray-700 whitespace-pre-wrap">{f.comment}</p>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {tab==="coachnotes" && (
+        <div className="space-y-4">
+          {/* Write note */}
+          <Card className="p-4 space-y-3">
+            <p className="text-sm font-semibold text-gray-700">✍️ Γράψε σχόλιο για τον/την {client.name}</p>
+            <p className="text-xs text-gray-400">Το σχόλιο θα φαίνεται στον πελάτη στην καρτέλα "Από την Coach".</p>
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Ημερομηνία</label>
+              <input type="date" value={noteDate} onChange={e=>setNoteDate(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm" />
+            </div>
+            <textarea value={noteText} onChange={e=>setNoteText(e.target.value)} rows={4}
+              placeholder={`Π.χ. "Μπράβο αυτή την εβδομάδα! Παρατηρώ μεγάλη βελτίωση στο νερό 💪"`}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm resize-none" />
+            <Btn onClick={saveNote} disabled={savingNote||!noteText.trim()} className="w-full">
+              {savingNote?<><Spinner/>Αποθήκευση...</>:"Αποθήκευση Σχολίου"}
+            </Btn>
+          </Card>
+
+          {/* Previous notes */}
+          <p className="text-xs text-gray-400 font-medium px-1">Προηγούμενα σχόλια</p>
+          {coachNotesGrouped.length===0 && <p className="text-sm text-gray-400 text-center py-6">Δεν υπάρχουν σχόλια ακόμα</p>}
+          {coachNotesGrouped.map((n,i)=>(
+            <Card key={i} className="p-4">
+              <div className="flex justify-between items-center mb-1">
+                <p className="text-xs font-semibold text-violet-600">{fmtDate(n.date)}</p>
+                <button onClick={()=>{ setNoteDate(n.date); setNoteText(n.note); setTab("coachnotes"); }}
+                  className="text-xs text-gray-400 hover:text-violet-600">✏️ Επεξεργασία</button>
+              </div>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{n.note}</p>
             </Card>
           ))}
         </div>
