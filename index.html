@@ -2,25 +2,55 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#2f5138" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Health Tracker" />
 <title>Health Tracker — Let's Thrive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          forest:     { 50:'#f1f6f2', 100:'#e0ebe1', 200:'#c2d7c5', 300:'#9cbb9f', 400:'#6f9975', 500:'#4f7d57', 600:'#3c6647', 700:'#2f5138', 800:'#28422f', 900:'#213627' },
+          terracotta: { 50:'#fdf4f0', 100:'#fbe6dc', 200:'#f6c8b3', 300:'#eea27e', 400:'#e37f54', 500:'#d5613a', 600:'#b94a2a', 700:'#993b23' },
+          cream:      { 50:'#fdfcfa', 100:'#faf7f0', 200:'#f3ede1' },
+        },
+        fontFamily: {
+          display: ['"Fraunces"', 'ui-serif', 'serif'],
+          sans: ['"Inter"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        },
+      },
+    },
+  };
+</script>
 <style>
-  * { -webkit-tap-highlight-color: transparent; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  .spin { animation: spin 1s linear infinite; }
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  html, body { background:#faf7f0; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .font-display { font-family: 'Fraunces', ui-serif, serif; }
+  .spin { animation: spin .9s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .fade-in { animation: fadeIn 0.2s ease; }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
-  input[type=range] { accent-color: #7c3aed; }
-  .tab-active { border-bottom: 2px solid #7c3aed; color: #7c3aed; }
-  input:focus, textarea:focus, select:focus { outline: none; border-color: #7c3aed !important; box-shadow: 0 0 0 3px rgba(124,58,237,0.1); }
+  .fade-in { animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  .pop { animation: pop .28s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes pop { from { transform:scale(.92); opacity:.4; } to { transform:scale(1); opacity:1; } }
+  input[type=range] { accent-color: #3c6647; }
+  input:focus, textarea:focus, select:focus { outline:none; border-color:#4f7d57 !important; box-shadow: 0 0 0 3px rgba(79,125,87,0.14); }
+  ::-webkit-scrollbar { display:none; }
+  .safe-b { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+  .card-shadow { box-shadow: 0 1px 2px rgba(33,54,39,0.04), 0 10px 24px -14px rgba(33,54,39,0.16); }
 </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-cream-100 min-h-screen">
 <div id="root"></div>
 
 <script type="text/babel">
@@ -28,7 +58,7 @@ const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 // Paste your deployed Apps Script URL here (or set via Settings in the app)
-const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbzXNh6ZRyG3GE6eMUSFcxC5IhVvO1J7618LrXPQMdfBLQJTh9JNoVMB5bInXZA64Ig/exec";
+const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbzMOgG7uBKcUEzuUxIJU0LZC-0UrQWxIJqZdQEfIExS3J0Bpr2yk1UMglv02t-QR4oE/exec";
 const STORAGE = {
   TOKEN:   "ht_token",
   NAME:    "ht_name",
@@ -38,33 +68,102 @@ const STORAGE = {
 
 // ─── HABIT TEMPLATES ─────────────────────────────────────────────────────────
 const DEFAULT_HABITS = [
-  "Ήπια 8+ ποτήρια νερό",
-  "Έκανα κίνηση / άσκηση",
-  "Κοιμήθηκα 7–8 ώρες",
-  "Έφαγα πρωινό",
-  "Δεν έφαγα αργά τη νύχτα",
-  "Χωρίς ζάχαρη / γλυκά",
-  "Ενσυνείδητη κατανάλωση (χωρίς οθόνη)",
+  "Τα πρώτα 30' χωρίς οθόνη",
+  "Χλιαρό νερό με λεμόνι και αλάτι",
+  "Πρωινό στα 30'-40' από την ώρα που ξυπνάω",
   "Έλαβα τα συμπληρώματά μου",
+  "Πρωινό με 30 γρ τουλάχιστον πρωτεΐνη",
+  "Καφές τουλάχιστον 30' μετά το πρωινό",
+  "Επαφή με πρωινό φως - αναπνοές",
+  "Το πολύ 2 καφέδες και ο 2ος πριν το μεσημέρι",
+  "Περπάτημα μετά το φαγητό",
+  "Power nap 15'",
+  "Τουλάχιστον 8 ποτήρια νερό",
+  "Έκανα κίνηση / άσκηση",
+  "Τουλάχιστον 120 γρ πρωτεΐνη",
+  "Τουλάχιστον 3 ώρες χωρίς φαγητό πριν τον ύπνο",
+  "Τουλάχιστον 2 ώρες χωρίς δουλειά / εργασία πριν τον ύπνο",
+  "Τουλάχιστον 2 ώρες χωρίς υγρά πριν τον ύπνο",
+  "Τουλάχιστον 1 ώρα χωρίς οθόνη πριν τον ύπνο",
+  "Τουλάχιστον 8 ώρες ύπνο",
 ];
 
 // ─── FOOD FREQUENCY CATEGORIES ────────────────────────────────────────────────
 const FOOD_FREQ_CATS = [
-  { id:"veg",    label:"🥦 Λαχανικά",          hint:"σαλάτες, μαγειρευτά" },
-  { id:"fruit",  label:"🍎 Φρούτα",             hint:"φρέσκα ή κατεψυγμένα" },
-  { id:"grains", label:"🌾 Δημητριακά / ψωμί",  hint:"ρύζι, ζυμαρικά, ψωμί" },
-  { id:"prot",   label:"🍗 Πρωτεΐνες",          hint:"κρέας, ψάρι, αυγά, τόνος" },
-  { id:"dairy",  label:"🥛 Γαλακτοκομικά",      hint:"γιαούρτι, τυρί, γάλα" },
-  { id:"legum",  label:"🫘 Όσπρια",             hint:"φακές, ρεβίθια, φασόλια" },
-  { id:"fats",   label:"🫒 Καλά λίπη",          hint:"ελαιόλαδο, ξηροί καρποί, αβοκάντο" },
-  { id:"sweet",  label:"🍰 Γλυκά / επεξεργασμένα", hint:"μπισκότα, αναψυκτικά, fast food" },
-  { id:"coffee", label:"☕ Καφές",              hint:"εσπρέσο, φραπέ, τσάι" },
-  { id:"alc",    label:"🍷 Αλκοόλ",             hint:"κρασί, μπύρα, ποτό" },
+  { id:"legum",    label:"🫘 Όσπρια",         hint:"φακές, ρεβίθια, φασόλια" },
+  { id:"ladera",   label:"🍲 Λαδερά",         hint:"φασολάκια, μπάμιες, γεμιστά κ.λπ." },
+  { id:"pasta",    label:"🍝 Ζυμαρικά",        hint:"μακαρόνια, πένες, κριθαράκι" },
+  { id:"fish",     label:"🐟 Ψάρι",           hint:"ψάρι, θαλασσινά" },
+  { id:"chicken",  label:"🍗 Κοτόπουλο",       hint:"κοτόπουλο, γαλοπούλα" },
+  { id:"redmeat",  label:"🥩 Κόκκινο κρέας",   hint:"μοσχάρι, χοιρινό, αρνί" },
+  { id:"sweetfat", label:"🍰 Γλυκά-λιπαρά",    hint:"γλυκά, επεξεργασμένα, λιπαρά σνακ" },
+  { id:"fried",    label:"🍟 Τηγανητά",        hint:"τηγανητό φαγητό" },
+  { id:"coffee",   label:"☕ Καφέδες",         hint:"εσπρέσο, φραπέ, τσάι" },
+  { id:"alcohol",  label:"🍷 Αλκοόλ",          hint:"κρασί, μπύρα, ποτό" },
 ];
 
+// Extra component categories used ONLY for the per-meal protein calculation on the
+// Φαγητό tab — deliberately NOT part of FOOD_FREQ_CATS, so they never appear in the
+// Εβδομάδα tab's manual tally or auto category-tracking cards (both loop over
+// FOOD_FREQ_CATS specifically). If one of these should ever also be tracked weekly,
+// move its entry from this list into FOOD_FREQ_CATS instead of duplicating it.
+const PROTEIN_ONLY_CATS = [
+  { id:"egg",             label:"🥚 Αυγά",                hint:"αυγά (μελάτα, βραστά, ομελέτα)" },
+  { id:"dairy",           label:"🧈 Γαλακτομικά (γενικά)", hint:"όταν δεν ξέρεις ακριβώς τι — γενική κατηγορία" },
+  { id:"yogurt",          label:"🥣 Γιαούρτι",            hint:"απλό γιαούρτι, όχι στραγγιστό" },
+  { id:"strained_yogurt", label:"🫙 Στραγγιστό γιαούρτι", hint:"π.χ. τύπου Fage" },
+  { id:"cheese",          label:"🧀 Τυρί",                hint:"φέτα, κασέρι, τυριά γενικά" },
+  { id:"milk",            label:"🥛 Γάλα",                hint:"αγελαδινό, φυτικό κ.λπ." },
+  { id:"turkey_slices",   label:"🦃 Φέτες γαλοπούλας",    hint:"αλλαντικό, φέτες ψυγείου" },
+  { id:"quinoa",          label:"🌾 Κινόα",               hint:"μαγειρεμένη κινόα" },
+  { id:"nuts",            label:"🌰 Ξηροί καρποί",        hint:"αμύγδαλα, καρύδια, φιστίκια" },
+  { id:"soy",             label:"🫛 Σόγια",                hint:"φασόλια σόγιας, edamame, τόφου" },
+  { id:"kefir",           label:"🧋 Κεφίρ",               hint:"κεφίρ γάλακτος" },
+];
+// Union used only by the Φαγητό-tab component picker — Εβδομάδα tab code must keep
+// referencing FOOD_FREQ_CATS directly, never this combined list.
+const COMPONENT_CATEGORIES = [...FOOD_FREQ_CATS, ...PROTEIN_ONLY_CATS];
+
+// Habits whose weekly completion count feeds the auto "Από τα Habits" card
+// on the Εβδομάδα tab. Must match the exact text in DEFAULT_HABITS above —
+// if that list's wording changes, update these three strings too.
+const WEEKLY_HABIT_STATS = [
+  { key:"sleep",    label:"Καλός ύπνος (8+ ώρες)", habitText:"Τουλάχιστον 8 ώρες ύπνο" },
+  { key:"exercise", label:"Άσκηση",                 habitText:"Έκανα κίνηση / άσκηση" },
+  { key:"protein",  label:"Κάλυψη πρωτεΐνης",       habitText:"Τουλάχιστον 120 γρ πρωτεΐνη" },
+];
+
+// ─── NUTRITION EQUIVALENCE TABLE (starter/provisional — see protein-equivalence-starter.xlsx) ──
+// σπιρτόκουτο ≈ 30γρ, φλιτζάνι ≈ 150γρ. Protein-per-100g values are rough estimates pending
+// review by Λαμπρίνη — update these numbers (not the app logic) once she corrects the table.
+const NUTRITION_UNITS = {
+  spirtokouto: { label:"σπιρτόκουτο", grams:30 },
+  flitzani:    { label:"φλιτζάνι",    grams:150 },
+  temaxio:     { label:"τεμάχιο",     grams:50 }, // used for eggs — 1 τεμάχιο ≈ 1 αυγό ≈ 50γρ
+  feta:        { label:"φέτα",        grams:20 }, // used for γαλοπούλα/τυρί — 1 φέτα ≈ 20γρ (ενιαία τιμή, ρύθμισε αν χρειάζεται)
+};
+const PROTEIN_DENSITY = { // grams of protein per 100g, by category id — PROVISIONAL
+  legum:8, ladera:3, pasta:5, fish:20, chicken:27, redmeat:26, sweetfat:5, fried:8, coffee:0, alcohol:0,
+  // added for protein-only categories — rougher estimates, flag for Λαμπρίνη to review:
+  egg:13, dairy:4, yogurt:5, strained_yogurt:9, cheese:18, milk:3.3, turkey_slices:19, quinoa:4.4, nuts:20, soy:12, kefir:3.3,
+};
+const CATEGORY_DEFAULT_UNIT = {
+  legum:"flitzani", ladera:"flitzani", pasta:"flitzani", fish:"spirtokouto", chicken:"spirtokouto",
+  redmeat:"spirtokouto", sweetfat:"spirtokouto", fried:"flitzani", coffee:"spirtokouto", alcohol:"spirtokouto",
+  egg:"temaxio", dairy:"flitzani", yogurt:"flitzani", strained_yogurt:"flitzani", cheese:"feta",
+  milk:"flitzani", turkey_slices:"feta", quinoa:"flitzani", nuts:"spirtokouto", soy:"spirtokouto", kefir:"flitzani",
+};
+const proteinForComponent = c => {
+  const grams = (NUTRITION_UNITS[c.unit]?.grams || 0) * (parseFloat(c.qty ?? c.quantity) || 0);
+  return grams * (PROTEIN_DENSITY[c.category] ?? 0) / 100;
+};
+const EMPTY_COMPONENT = () => ({ category:"", unit:"spirtokouto", qty:"1" });
+
 const FREQ_OPTIONS = ["0","1","2","3","4","5","6","7+"];
-const HUNGER_LABELS = {1:"Λιμασμένη",3:"Αρκετά πεινασμένη",5:"Ουδέτερη",7:"Σχεδόν χορτάτη",10:"Πολύ χορτάτη"};
+const HUNGER_LABELS = {0:"Πολύ πεινασμένη",1:"Πεινασμένη",2:"Λίγο πεινασμένη",3:"Ουδέτερη",4:"Χορτάτη",5:"Πολύ χορτάτη"};
+const ENJOYMENT_LABELS = {0:"Καθόλου",1:"Λίγη",2:"Μέτρια",3:"Αρκετή",4:"Πολλή",5:"Απόλυτη"};
 const EMOTIONS_OPTIONS = ["Ήρεμη","Άγχος","Κούραση","Χαρά","Λύπη","Βαρεμάρα","Επιβράβευση","Κοινωνική πίεση","Άλλο"];
+const WEEKDAYS_SHORT = ["Κυρ","Δευ","Τρι","Τετ","Πεμ","Παρ","Σαβ"];
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 const today = () => new Date().toISOString().split("T")[0];
@@ -73,11 +172,22 @@ const fmtDate = d => {
   const months = ["Ιαν","Φεβ","Μαρ","Απρ","Μαΐ","Ιουν","Ιουλ","Αυγ","Σεπ","Οκτ","Νοε","Δεκ"];
   return `${parseInt(day)} ${months[parseInt(m)-1]} ${y}`;
 };
+const fmtDateShort = d => {
+  const dt = new Date(d);
+  return `${WEEKDAYS_SHORT[dt.getDay()]} ${dt.getDate()}`;
+};
 const weekStart = d => {
   const dt = new Date(d); const day = dt.getDay();
   const diff = day===0 ? -6 : 1-day;
   dt.setDate(dt.getDate()+diff);
   return dt.toISOString().split("T")[0];
+};
+const greeting = () => {
+  const h = new Date().getHours();
+  if (h < 5) return "Καλό βράδυ";
+  if (h < 12) return "Καλημέρα";
+  if (h < 18) return "Καλησπέρα";
+  return "Καλό βράδυ";
 };
 const ls = { get:(k)=>{ try{return localStorage.getItem(k);}catch{return null;} }, set:(k,v)=>{ try{localStorage.setItem(k,v);}catch{} }, del:(k)=>{ try{localStorage.removeItem(k);}catch{} } };
 
@@ -99,52 +209,99 @@ async function api(action, params={}, method="GET") {
   }
 }
 
+// ─── ICONS (inline SVG, generic outline set) ──────────────────────────────────
+const Icon = ({ children, size=20, className="" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+    strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+);
+const IconCheck   = p => <Icon {...p}><path d="M12 22a10 10 0 100-20 10 10 0 000 20z" opacity=".35"/><path d="M8 12.5l2.5 2.5L16 9.5"/></Icon>;
+const IconPlate   = p => <Icon {...p}><circle cx="12" cy="12" r="9" opacity=".35"/><circle cx="12" cy="12" r="4.2"/></Icon>;
+const IconWeek    = p => <Icon {...p}><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" opacity=".35"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M8 13.5h.01M12 13.5h.01M16 13.5h.01M8 17h.01M12 17h.01"/></Icon>;
+const IconChat    = p => <Icon {...p}><path d="M4 5.5h16v11H9l-5 4v-4H4v-11z" opacity=".35"/><path d="M8 10h8M8 13.5h5"/></Icon>;
+const IconMail    = p => <Icon {...p}><rect x="3.5" y="5.5" width="17" height="13" rx="2.5" opacity=".35"/><path d="M4.5 7l7.5 6 7.5-6"/></Icon>;
+const IconGear    = p => <Icon {...p}><circle cx="12" cy="12" r="3" /><path d="M19.4 13.5a1.7 1.7 0 000-3l1-1.7-1.7-1.7-1.7 1a1.7 1.7 0 00-3-1.7L13.5 4.6h-3L10 6.4a1.7 1.7 0 00-3 1.7l-1.7-1L3.6 8.8l1 1.7a1.7 1.7 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.7 1.7 0 003 1.7l.5 1.9h3l.5-1.9a1.7 1.7 0 003-1.7l1.7 1 1.7-1.7-1-1.7z" opacity=".35"/></Icon>;
+const IconChevL   = p => <Icon {...p}><path d="M15 5l-7 7 7 7"/></Icon>;
+const IconChevR   = p => <Icon {...p}><path d="M9 5l7 7-7 7"/></Icon>;
+const IconArrowL  = p => <Icon {...p}><path d="M19 12H5M11 6l-6 6 6 6"/></Icon>;
+const IconSearch  = p => <Icon {...p}><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></Icon>;
+const IconCopy    = p => <Icon {...p}><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10" opacity=".5"/></Icon>;
+const IconPlus    = p => <Icon {...p}><path d="M12 5v14M5 12h14"/></Icon>;
+const IconX       = p => <Icon {...p}><path d="M18 6L6 18M6 6l12 12"/></Icon>;
+const IconFlame   = p => <Icon {...p}><path d="M12 2.5s5 4.5 5 9.5a5 5 0 11-10 0c0-1.3.5-2.3 1-3.1.3.9 1 1.4 1.7 1.4.9 0 1.3-.9 1.1-1.9-.3-1.4.2-3.4 1.2-5.9z"/></Icon>;
+const IconLogout  = p => <Icon {...p}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></Icon>;
+
 // ─── SMALL UI ─────────────────────────────────────────────────────────────────
-function Spinner() {
-  return <div className="w-5 h-5 border-2 border-violet-300 border-t-violet-600 rounded-full spin" />;
+function Spinner({ className="" }) {
+  return <div className={`w-5 h-5 border-2 border-forest-200 border-t-forest-600 rounded-full spin ${className}`} />;
 }
 function Btn({children, onClick, disabled, variant="primary", size="md", className=""}) {
-  const base = "font-semibold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2";
+  const base = "font-semibold rounded-2xl transition-all active:scale-[0.97] flex items-center justify-center gap-2";
   const sz = size==="sm" ? "px-3 py-1.5 text-sm" : size==="lg" ? "px-6 py-3.5 text-base" : "px-4 py-2.5 text-sm";
-  const v = variant==="primary" ? "bg-violet-600 hover:bg-violet-700 text-white shadow-sm" :
-            variant==="outline" ? "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" :
-            variant==="ghost"   ? "text-gray-500 hover:bg-gray-100" :
-            variant==="danger"  ? "bg-red-500 hover:bg-red-600 text-white" : "";
+  const v = variant==="primary" ? "bg-forest-700 hover:bg-forest-800 text-white shadow-sm shadow-forest-700/20" :
+            variant==="outline" ? "border border-forest-200 bg-white text-forest-700 hover:bg-forest-50" :
+            variant==="ghost"   ? "text-forest-600 hover:bg-forest-50" :
+            variant==="danger"  ? "bg-red-500 hover:bg-red-600 text-white" :
+            variant==="accent"  ? "bg-terracotta-500 hover:bg-terracotta-600 text-white shadow-sm shadow-terracotta-500/20" : "";
   return <button onClick={onClick} disabled={disabled} className={`${base} ${sz} ${v} ${disabled?"opacity-50 cursor-not-allowed":""} ${className}`}>{children}</button>;
 }
 function Card({children, className=""}) {
-  return <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm ${className}`}>{children}</div>;
+  return <div className={`bg-white rounded-3xl border border-forest-100/70 card-shadow ${className}`}>{children}</div>;
+}
+function Eyebrow({children}) {
+  return <p className="text-[11px] font-bold tracking-wider text-forest-500 uppercase mb-1.5">{children}</p>;
 }
 function Toast({msg, type="success", onClose}) {
   useEffect(()=>{ const t=setTimeout(onClose,3000); return ()=>clearTimeout(t); },[]);
-  const color = type==="success"?"bg-emerald-600":type==="error"?"bg-red-500":"bg-violet-600";
+  const color = type==="success"?"bg-forest-700":type==="error"?"bg-red-500":"bg-terracotta-600";
   return <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 ${color} text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium fade-in max-w-xs text-center`}>{msg}</div>;
 }
-
-// ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
-function SettingsView({ onBack }) {
-  const [url, setUrl] = useState(ls.get(STORAGE.API_URL)||"");
-  const [saved, setSaved] = useState(false);
-  const save = () => { ls.set(STORAGE.API_URL, url.trim()); setSaved(true); setTimeout(()=>setSaved(false),2000); };
-  const logout = () => { [STORAGE.TOKEN,STORAGE.NAME,STORAGE.COACH].forEach(k=>ls.del(k)); window.location.reload(); };
+function ProgressRing({ pct, size=64, stroke=7, label, sub, color="#2f5138", track="#e0ebe1" }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const off = c - (Math.min(100,Math.max(0,pct)) / 100) * c;
   return (
-    <div className="fade-in space-y-4">
-      <div className="flex items-center gap-3 mb-2">
-        <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500">←</button>
-        <h2 className="font-bold text-gray-800">Ρυθμίσεις</h2>
+    <div className="relative flex-shrink-0" style={{ width:size, height:size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size/2} cy={size/2} r={r} stroke={track} strokeWidth={stroke} fill="none" />
+        <circle cx={size/2} cy={size/2} r={r} stroke={color} strokeWidth={stroke} fill="none"
+          strokeDasharray={c} strokeDashoffset={off} strokeLinecap="round" style={{ transition:"stroke-dashoffset .6s ease" }} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-sm font-bold text-forest-800 font-display">{label}</span>
+        {sub && <span className="text-[9px] text-gray-400 -mt-0.5">{sub}</span>}
       </div>
-      <Card className="p-4 space-y-3">
-        <p className="text-sm font-semibold text-gray-700">Google Apps Script URL</p>
-        <p className="text-xs text-gray-400">Το URL που πήρες όταν έκανες Deploy → Web App στο Google Apps Script.</p>
-        <textarea value={url} onChange={e=>setUrl(e.target.value)} rows={3}
-          placeholder="https://script.google.com/macros/s/..."
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none" />
-        <Btn onClick={save} className="w-full">{saved ? "✓ Αποθηκεύτηκε!" : "Αποθήκευση"}</Btn>
-      </Card>
-      <Card className="p-4">
-        <p className="text-sm font-semibold text-gray-700 mb-2">Λογαριασμός</p>
-        <Btn onClick={logout} variant="danger" className="w-full">Αποσύνδεση</Btn>
-      </Card>
+    </div>
+  );
+}
+function WeekStrip({ strip, streak }) {
+  if (!strip || strip.length===0) return null;
+  return (
+    <div className="flex items-center justify-between gap-1.5">
+      {strip.map((d,i)=>{
+        const isToday = d.date===today();
+        const full = d.pct===100;
+        const some = d.pct!=null && d.pct>0 && d.pct<100;
+        return (
+          <div key={i} className="flex flex-col items-center gap-1 flex-1">
+            <div className={`w-full aspect-square max-w-8 rounded-xl flex items-center justify-center text-[10px] font-bold border-2 transition-colors
+              ${full ? "bg-forest-600 border-forest-600 text-white" :
+                some ? "bg-terracotta-100 border-terracotta-300 text-terracotta-700" :
+                "bg-white border-gray-200 text-gray-300"}
+              ${isToday ? "ring-2 ring-offset-1 ring-forest-400" : ""}`}>
+              {full ? "✓" : (d.pct!=null ? d.pct : "")}
+            </div>
+            <span className={`text-[10px] ${isToday?"text-forest-700 font-bold":"text-gray-400"}`}>{fmtDateShort(d.date).split(" ")[0]}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+function SplashScreen() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-cream-100">
+      <div className="w-14 h-14 rounded-2xl bg-forest-700 flex items-center justify-center text-2xl mb-4 pop">🌿</div>
+      <Spinner />
     </div>
   );
 }
@@ -156,9 +313,6 @@ function LoginView({ onLogin }) {
   const [pass, setPass] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
-
-  if (showSettings) return <SettingsView onBack={()=>setShowSettings(false)} />;
 
   const loginClient = async () => {
     if (!token.trim()) return setError("Εισήγαγε το token σου");
@@ -183,20 +337,20 @@ function LoginView({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-5 bg-gradient-to-br from-violet-50 to-fuchsia-50">
+    <div className="min-h-screen flex flex-col items-center justify-center p-5 bg-gradient-to-b from-forest-50 via-cream-100 to-cream-100">
       <div className="w-full max-w-sm space-y-6">
         {/* Logo */}
-        <div className="text-center space-y-1">
-          <div className="text-4xl">🌿</div>
-          <h1 className="text-2xl font-bold text-gray-800">Health Tracker</h1>
-          <p className="text-sm text-gray-400">Let's Thrive for Life</p>
+        <div className="text-center space-y-2">
+          <div className="w-16 h-16 rounded-2xl bg-forest-700 mx-auto flex items-center justify-center text-3xl shadow-lg shadow-forest-700/25">🌿</div>
+          <h1 className="text-2xl font-bold text-forest-900 font-display">Health Tracker</h1>
+          <p className="text-sm text-forest-500 italic">Let's Thrive for Life</p>
         </div>
 
         {/* Mode toggle */}
-        <div className="flex bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
+        <div className="flex bg-white rounded-2xl p-1 border border-forest-100 card-shadow">
           {[["client","Πελάτης"],["coach","Coach"]].map(([v,l])=>(
             <button key={v} onClick={()=>{setMode(v);setError("");}}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${mode===v?"bg-violet-600 text-white shadow":"text-gray-500"}`}>{l}</button>
+              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${mode===v?"bg-forest-700 text-white shadow":"text-gray-400"}`}>{l}</button>
           ))}
         </div>
 
@@ -208,7 +362,7 @@ function LoginView({ onLogin }) {
                 <input value={token} onChange={e=>setToken(e.target.value)} onKeyDown={e=>e.key==="Enter"&&loginClient()}
                   placeholder="Π.χ. a3f9b2c1d4e5f6a7"
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm" />
-                <p className="text-xs text-gray-400 mt-1.5">Το token σου στο έδωσε η διαιτολόγος σου.</p>
+                <p className="text-xs text-gray-400 mt-1.5">Το token σου το έδωσε η διαιτολόγος σου, ή άνοιξε τον προσωπικό σου σύνδεσμο.</p>
               </div>
               {error && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
               <Btn onClick={loginClient} disabled={loading} size="lg" className="w-full">
@@ -230,17 +384,13 @@ function LoginView({ onLogin }) {
             </>
           )}
         </Card>
-
-        <button onClick={()=>setShowSettings(true)} className="mx-auto flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
-          ⚙ Ρυθμίσεις API
-        </button>
       </div>
     </div>
   );
 }
 
 // ─── HABIT TRACKER ────────────────────────────────────────────────────────────
-function HabitTab({ token, date, initialData, onSave }) {
+function HabitTab({ token, date, initialData, onSave, weekStrip, streak }) {
   const [habits, setHabits] = useState(() => {
     if (initialData?.length) return initialData.map(h=>({ habit:h.habit, done: h.done==="TRUE"||h.done===true }));
     return DEFAULT_HABITS.map(h=>({ habit:h, done:false }));
@@ -248,9 +398,14 @@ function HabitTab({ token, date, initialData, onSave }) {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
 
+  useEffect(()=>{
+    if (initialData?.length) setHabits(initialData.map(h=>({ habit:h.habit, done: h.done==="TRUE"||h.done===true })));
+    else setHabits(DEFAULT_HABITS.map(h=>({ habit:h, done:false })));
+  }, [initialData, date]);
+
   const toggle = i => setHabits(p=>p.map((h,idx)=>idx===i?{...h,done:!h.done}:h));
   const done = habits.filter(h=>h.done).length;
-  const pct = Math.round(done/habits.length*100);
+  const pct = habits.length ? Math.round(done/habits.length*100) : 0;
 
   const save = async () => {
     setSaving(true);
@@ -267,27 +422,36 @@ function HabitTab({ token, date, initialData, onSave }) {
       {toast && <Toast msg={toast} type={toast.includes("Σφάλμα")?"error":"success"} onClose={()=>setToast(null)} />}
 
       {/* Progress */}
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-2">
+      <Card className="p-4 flex items-center gap-4">
+        <ProgressRing pct={pct} label={`${done}/${habits.length}`} color="#2f5138" />
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-700">Πρόοδος σήμερα</p>
-          <p className="text-sm font-bold text-violet-600">{done}/{habits.length}</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {pct===100 ? "🎉 Τέλεια! Όλες οι συνήθειες για σήμερα!" : pct>=60 ? "💪 Πολύ καλή πρόοδος!" : pct>=30 ? "🌱 Συνέχισε έτσι!" : "Ξεκίνα σήμερα — κάθε βήμα μετράει!"}
+          </p>
+          {streak > 0 && (
+            <div className="mt-2 inline-flex items-center gap-1 bg-terracotta-100 text-terracotta-700 text-xs font-bold px-2.5 py-1 rounded-full">
+              <IconFlame size={13}/> {streak} μέρες σερί
+            </div>
+          )}
         </div>
-        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all duration-500"
-            style={{width:`${pct}%`}} />
-        </div>
-        <p className="text-xs text-gray-400 mt-1.5">
-          {pct===100 ? "🎉 Τέλεια! Όλες οι συνήθειες για σήμερα!" : pct>=60 ? "💪 Πολύ καλή πρόοδος!" : pct>=30 ? "🌱 Συνέχισε έτσι!" : "Ξεκίνα σήμερα — κάθε βήμα μετράει!"}
-        </p>
       </Card>
+
+      {/* Week strip */}
+      {weekStrip && weekStrip.length>0 && (
+        <Card className="p-4">
+          <Eyebrow>Αυτή η εβδομάδα</Eyebrow>
+          <WeekStrip strip={weekStrip} streak={streak} />
+        </Card>
+      )}
 
       {/* Habit list */}
       <Card className="divide-y divide-gray-50">
         {habits.map((h,i) => (
           <button key={i} onClick={()=>toggle(i)}
-            className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-50 active:bg-gray-100">
+            className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-forest-50/60 active:bg-forest-50">
             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all
-              ${h.done ? "bg-violet-600 border-violet-600" : "border-gray-300"}`}>
+              ${h.done ? "bg-forest-700 border-forest-700" : "border-gray-300"}`}>
               {h.done && <span className="text-white text-xs">✓</span>}
             </div>
             <p className={`text-sm ${h.done?"text-gray-400 line-through":"text-gray-700"}`}>{h.habit}</p>
@@ -303,16 +467,45 @@ function HabitTab({ token, date, initialData, onSave }) {
 }
 
 // ─── FOOD LOG ─────────────────────────────────────────────────────────────────
-const EMPTY_ENTRY = () => ({ time:"", food:"", portion:"", energyCal:"", hungerScore:5, emotions:[] });
+const EMPTY_ENTRY = () => ({ time:"", food:"", portion:"", energyCal:"", hungerScore:3, enjoyment:3, emotions:[], components:[] });
+const DEFAULT_ENTRIES = () => [EMPTY_ENTRY(), EMPTY_ENTRY(), EMPTY_ENTRY()];
+const MEAL_LABELS = ["Πρωινό", "Μεσημεριανό", "Βραδινό"];
+const MEAL_PLACEHOLDERS = [
+  "Π.χ. Ομελέτα με 2 αυγά, 2 σπιρτόκουτα φέτα, κρεμμύδι, πιπεριά, 2 κ.σ. καλαμπόκι, ντοματίνια και ρόκα",
+  "Π.χ. 4 σπιρτόκουτα κοτόπουλο, 1 φλιτζάνι ρύζι, 2 φλιτζάνια σαλάτα",
+  "Π.χ. 3 κρητικά παξιμάδια με μία τριμμένη ντομάτα, 2 σπιρτόκουτα φέτα και κάπαρη",
+];
+const EXTRA_PLACEHOLDER = "Π.χ. Ένα φρούτο ή μια χούφτα ξηροί καρποί";
+const PORTION_OPTIONS = ["Μικρή", "Κανονική", "Μεγάλη", "Φούσκωσα!"];
+const mealLabel = i => MEAL_LABELS[i] || `Σνακ ${i-2}`;
+const mealPlaceholder = i => MEAL_PLACEHOLDERS[i] || EXTRA_PLACEHOLDER;
 
-function FoodLogTab({ token, date, initialData, onSave }) {
-  const [entries, setEntries] = useState(()=>
-    initialData?.length ? initialData.map(e=>({...e, hungerScore:parseInt(e.hungerScore)||5, emotions:typeof e.emotions==="string"&&e.emotions?e.emotions.split("|"):[]}))
-    : [EMPTY_ENTRY()]
-  );
+// Reconstructs entries from backend data, re-attaching each entry's structured
+// components by matching mealLabel (components aren't stored inline on the
+// FoodLog row — they live in a separate sheet and are joined back here by position).
+function buildEntries(initialData, initialComponents) {
+  if (!initialData?.length) return DEFAULT_ENTRIES();
+  return initialData.map((e,i)=>({
+    ...e,
+    hungerScore: e.hungerScore!=null&&e.hungerScore!==""?parseInt(e.hungerScore):3,
+    enjoyment: e.enjoyment!=null&&e.enjoyment!==""?parseInt(e.enjoyment):3,
+    emotions: typeof e.emotions==="string"&&e.emotions?e.emotions.split("|"):[],
+    components: (initialComponents||[])
+      .filter(c=>c.mealLabel===mealLabel(i))
+      .map(c=>({ category:c.category||"", unit:c.unit||"spirtokouto", qty:c.quantity!=null&&c.quantity!==""?String(c.quantity):"1" })),
+  }));
+}
+
+function FoodLogTab({ token, date, initialData, initialComponents, onSave }) {
+  const [entries, setEntries] = useState(()=>buildEntries(initialData, initialComponents));
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const [activeIdx, setActiveIdx] = useState(0);
+
+  useEffect(()=>{
+    setEntries(buildEntries(initialData, initialComponents));
+    setActiveIdx(0);
+  }, [initialData, initialComponents, date]);
 
   const upd = (i,k,v) => setEntries(p=>p.map((e,idx)=>idx===i?{...e,[k]:v}:e));
   const addEntry = () => { setEntries(p=>[...p, EMPTY_ENTRY()]); setActiveIdx(entries.length); };
@@ -320,11 +513,26 @@ function FoodLogTab({ token, date, initialData, onSave }) {
   const toggleEmotion = (i,em) => {
     setEntries(p=>p.map((e,idx)=>idx!==i?e:{...e,emotions:e.emotions.includes(em)?e.emotions.filter(x=>x!==em):[...e.emotions,em]}));
   };
+  const addComponent = i => setEntries(p=>p.map((e,idx)=>idx!==i?e:{...e, components:[...e.components, EMPTY_COMPONENT()]}));
+  const delComponent = (i,ci) => setEntries(p=>p.map((e,idx)=>idx!==i?e:{...e, components:e.components.filter((_,cidx)=>cidx!==ci)}));
+  const updComponent = (i,ci,k,v) => setEntries(p=>p.map((e,idx)=>idx!==i?e:{...e, components:e.components.map((c,cidx)=>{
+    if (cidx!==ci) return c;
+    const next = {...c,[k]:v};
+    if (k==="category" && CATEGORY_DEFAULT_UNIT[v]) next.unit = CATEGORY_DEFAULT_UNIT[v];
+    return next;
+  })}));
+
+  const totalProtein = useMemo(()=> entries.reduce((s,e)=> s + (e.components||[]).reduce((s2,c)=>s2+proteinForComponent(c),0), 0), [entries]);
 
   const save = async () => {
     setSaving(true);
     try {
-      const payload = entries.map(e=>({...e, emotions:Array.isArray(e.emotions)?e.emotions.join("|"):e.emotions}));
+      const payload = entries.map((e,i)=>({
+        ...e,
+        emotions: Array.isArray(e.emotions)?e.emotions.join("|"):e.emotions,
+        mealLabel: mealLabel(i),
+        components: (e.components||[]).filter(c=>c.category && parseFloat(c.qty)>0),
+      }));
       await api("saveFoodLog", { token, date, entries:payload }, "POST");
       setToast("Αποθηκεύτηκε! ✓");
       onSave && onSave();
@@ -336,25 +544,30 @@ function FoodLogTab({ token, date, initialData, onSave }) {
     <div className="space-y-4 fade-in">
       {toast && <Toast msg={toast} type={toast.includes("Σφάλμα")?"error":"success"} onClose={()=>setToast(null)} />}
 
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-gray-700">{entries.length} {entries.length===1?"γεύμα":"γεύματα"} σήμερα</p>
+        {totalProtein>0 && <p className="text-xs font-bold text-terracotta-600">≈{Math.round(totalProtein)}γρ πρωτεΐνη σήμερα</p>}
+      </div>
+
       {/* Entry tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {entries.map((_,i)=>(
           <button key={i} onClick={()=>setActiveIdx(i)}
             className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors
-              ${activeIdx===i?"bg-violet-600 text-white":"bg-white border border-gray-200 text-gray-500"}`}>
-            Γεύμα {i+1}
+              ${activeIdx===i?"bg-forest-700 text-white":"bg-white border border-gray-200 text-gray-500"}`}>
+            {mealLabel(i)}
           </button>
         ))}
-        <button onClick={addEntry} className="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium bg-white border border-dashed border-gray-300 text-gray-400 hover:border-violet-300 hover:text-violet-500">
-          + Προσθήκη
+        <button onClick={addEntry} className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-white border border-dashed border-gray-300 text-gray-400 hover:border-forest-300 hover:text-forest-600">
+          <IconPlus size={13}/> Προσθήκη
         </button>
       </div>
 
       {entries.map((e,i)=>i!==activeIdx?null:(
         <Card key={i} className="p-4 space-y-4 fade-in">
           <div className="flex justify-between items-center">
-            <p className="text-sm font-semibold text-gray-700">Γεύμα {i+1}</p>
-            {entries.length>1 && <button onClick={()=>delEntry(i)} className="text-red-400 hover:text-red-600 text-xs">Διαγραφή</button>}
+            <p className="text-sm font-semibold text-gray-700">{mealLabel(i)}</p>
+            {i>=3 && <button onClick={()=>delEntry(i)} className="text-red-400 hover:text-red-600 text-xs">Διαγραφή</button>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -365,34 +578,84 @@ function FoodLogTab({ token, date, initialData, onSave }) {
             </div>
             <div>
               <label className="text-xs text-gray-400 mb-1 block">Μερίδα</label>
-              <input value={e.portion} onChange={ev=>upd(i,"portion",ev.target.value)} placeholder="π.χ. 1 μεσαία"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm" />
+              <select value={e.portion} onChange={ev=>upd(i,"portion",ev.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+                <option value="">Επίλεξε...</option>
+                {PORTION_OPTIONS.map(p=><option key={p} value={p}>{p}</option>)}
+              </select>
             </div>
           </div>
 
           <div>
             <label className="text-xs text-gray-400 mb-1 block">Τι έφαγα / ήπια</label>
             <textarea value={e.food} onChange={ev=>upd(i,"food",ev.target.value)} rows={2}
-              placeholder="Π.χ. κοτόπουλο με ρύζι και σαλάτα..."
+              placeholder={mealPlaceholder(i)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none" />
           </div>
 
+          {/* Structured components — optional, feeds the protein estimate and the
+              automatic weekly category tally on the Εβδομάδα tab. Free text above
+              stays the primary record; this is a bonus, not a replacement. */}
           <div>
-            <label className="text-xs text-gray-400 mb-1 block">Θερμίδες (προαιρετικό)</label>
-            <input type="number" value={e.energyCal} onChange={ev=>upd(i,"energyCal",ev.target.value)} placeholder="kcal"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm" />
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs text-gray-400">Συστατικά (προαιρετικό, για τον υπολογισμό)</label>
+              {(()=>{ const mp = e.components.reduce((s,c)=>s+proteinForComponent(c),0); return mp>0
+                ? <span className="text-xs font-bold text-terracotta-600">≈{Math.round(mp)}γρ πρωτεΐνη</span> : null; })()}
+            </div>
+            <div className="space-y-2">
+              {e.components.map((c,ci)=>(
+                <div key={ci} className="flex items-center gap-1.5">
+                  <select value={c.category} onChange={ev=>updComponent(i,ci,"category",ev.target.value)}
+                    className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white">
+                    <option value="">Κατηγορία...</option>
+                    {COMPONENT_CATEGORIES.map(cat=><option key={cat.id} value={cat.id}>{cat.label}</option>)}
+                  </select>
+                  <select value={c.unit} onChange={ev=>updComponent(i,ci,"unit",ev.target.value)}
+                    className="w-28 flex-shrink-0 border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white">
+                    <option value="spirtokouto">σπιρτόκουτο</option>
+                    <option value="flitzani">φλιτζάνι</option>
+                    <option value="temaxio">τεμάχιο</option>
+                    <option value="feta">φέτα</option>
+                  </select>
+                  <input type="number" min="0" max="10" step="0.5" value={c.qty} onChange={ev=>updComponent(i,ci,"qty",ev.target.value)}
+                    className="w-14 flex-shrink-0 border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-center" />
+                  <button onClick={()=>delComponent(i,ci)} className="w-7 h-7 flex-shrink-0 flex items-center justify-center text-gray-300 hover:text-red-500">
+                    <IconX size={14}/>
+                  </button>
+                </div>
+              ))}
+              <button onClick={()=>addComponent(i)} className="flex items-center gap-1 text-xs font-medium text-forest-600 hover:text-forest-800">
+                <IconPlus size={13}/> Πρόσθεσε συστατικό
+              </button>
+            </div>
           </div>
 
           {/* Hunger scale */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="text-xs text-gray-400">Επίπεδο πείνας / κορεσμού</label>
-              <span className="text-xs font-semibold text-violet-600">{e.hungerScore}/10 — {HUNGER_LABELS[e.hungerScore]||""}</span>
+              <label className="text-xs text-gray-400">Βαθμός πείνας</label>
+              <span className="text-xs font-semibold text-forest-700">{e.hungerScore}/5 — {HUNGER_LABELS[e.hungerScore]||""}</span>
             </div>
-            <input type="range" min="1" max="10" value={e.hungerScore} onChange={ev=>upd(i,"hungerScore",parseInt(ev.target.value))}
+            <input type="range" min="0" max="5" value={e.hungerScore} onChange={ev=>upd(i,"hungerScore",parseInt(ev.target.value))}
               className="w-full h-2 rounded-full" />
             <div className="flex justify-between text-xs text-gray-300 mt-1">
-              <span>Λιμασμένη</span><span>Χορτάτη</span>
+              <span>Πεινασμένη</span><span>Χορτάτη</span>
+            </div>
+          </div>
+
+          {/* Enjoyment scale — "enjoyment" persists once the updated health-tracker-backend.gs
+              is deployed (adds an "enjoyment" column to FoodLog). Until then it's sent to
+              saveFoodLog but silently dropped by the currently-live backend. Same applies to
+              the "Συστατικά" section below (new FoodComponents sheet). */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-xs text-gray-400">Βάθος απόλαυσης</label>
+              <span className="text-xs font-semibold text-forest-700">{e.enjoyment}/5 — {ENJOYMENT_LABELS[e.enjoyment]||""}</span>
+            </div>
+            <input type="range" min="0" max="5" value={e.enjoyment} onChange={ev=>upd(i,"enjoyment",parseInt(ev.target.value))}
+              className="w-full h-2 rounded-full" />
+            <div className="flex justify-between text-xs text-gray-300 mt-1">
+              <span>Καθόλου</span><span>Απόλυτη</span>
             </div>
           </div>
 
@@ -403,7 +666,7 @@ function FoodLogTab({ token, date, initialData, onSave }) {
               {EMOTIONS_OPTIONS.map(em=>(
                 <button key={em} onClick={()=>toggleEmotion(i,em)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors
-                    ${e.emotions.includes(em)?"bg-violet-100 text-violet-700 border border-violet-200":"bg-gray-100 text-gray-500"}`}>
+                    ${e.emotions.includes(em)?"bg-forest-100 text-forest-700 border border-forest-200":"bg-gray-100 text-gray-500"}`}>
                   {em}
                 </button>
               ))}
@@ -429,8 +692,95 @@ function FoodFreqTab({ token, date, initialData, onSave }) {
   });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [habitWeekStats, setHabitWeekStats] = useState(null);
+  const habitCacheRef = useRef({});
+  const [foodCompStats, setFoodCompStats] = useState(null);
+  const compCacheRef = useRef({});
+
+  useEffect(()=>{
+    const m = {};
+    if (initialData?.length) initialData.forEach(r=>{ m[r.category]=r.count; });
+    setCounts(m);
+  }, [initialData, date]);
+
+  // Auto-derived weekly stats, sourced from the Habits tab — read-only, no manual entry.
+  useEffect(()=>{
+    let cancelled = false;
+    setHabitWeekStats(null);
+    (async () => {
+      const t = today();
+      const days = [];
+      for (let i=0;i<7;i++) {
+        const d = new Date(ws); d.setDate(d.getDate()+i);
+        const ds = d.toISOString().split("T")[0];
+        if (ds > t) break; // don't count days that haven't happened yet
+        days.push(ds);
+      }
+      const perDayHabits = await Promise.all(days.map(async d => {
+        if (habitCacheRef.current[d]) return habitCacheRef.current[d];
+        try {
+          const dd = await api("getClientData", { token, date: d });
+          const habits = dd?.habits || [];
+          habitCacheRef.current[d] = habits;
+          return habits;
+        } catch { return []; }
+      }));
+      if (cancelled) return;
+      const stats = WEEKLY_HABIT_STATS.map(s => ({
+        ...s,
+        count: perDayHabits.filter(habits => habits.some(h=>h.habit===s.habitText && (h.done==="TRUE"||h.done===true))).length,
+        outOf: days.length,
+      }));
+      setHabitWeekStats(stats);
+    })();
+    return () => { cancelled = true; };
+  }, [ws, token]);
+
+  // Auto-derived weekly category tally + protein estimate, sourced from the optional
+  // "Συστατικά" components logged per meal on the Food tab — read-only, additive
+  // alongside the manual tally below (doesn't replace it).
+  useEffect(()=>{
+    let cancelled = false;
+    setFoodCompStats(null);
+    (async () => {
+      const t = today();
+      const days = [];
+      for (let i=0;i<7;i++) {
+        const d = new Date(ws); d.setDate(d.getDate()+i);
+        const ds = d.toISOString().split("T")[0];
+        if (ds > t) break;
+        days.push(ds);
+      }
+      const perDayComps = await Promise.all(days.map(async d => {
+        if (compCacheRef.current[d]) return compCacheRef.current[d];
+        try {
+          const dd = await api("getClientData", { token, date: d });
+          const comps = dd?.foodComponents || [];
+          compCacheRef.current[d] = comps;
+          return comps;
+        } catch { return []; }
+      }));
+      if (cancelled) return;
+      const catDays = {};
+      FOOD_FREQ_CATS.forEach(c=>{ catDays[c.id] = 0; });
+      let proteinDaysCount = 0, proteinSum = 0;
+      perDayComps.forEach(comps => {
+        const catsToday = new Set();
+        let dayProtein = 0;
+        (comps||[]).forEach(c => {
+          const qty = parseFloat(c.quantity);
+          if (qty > 0) { catsToday.add(c.category); dayProtein += proteinForComponent({ category:c.category, unit:c.unit, qty }); }
+        });
+        catsToday.forEach(cid => { if (catDays[cid] != null) catDays[cid]++; });
+        if (dayProtein > 0) { proteinDaysCount++; proteinSum += dayProtein; }
+      });
+      setFoodCompStats({ catDays, avgProtein: proteinDaysCount ? proteinSum/proteinDaysCount : 0, daysTracked: proteinDaysCount, outOf: days.length });
+    })();
+    return () => { cancelled = true; };
+  }, [ws, token]);
 
   const setCount = (id,v) => setCounts(p=>({...p,[id]:v}));
+  const logged = FOOD_FREQ_CATS.filter(c=>counts[c.id]!=null).length;
 
   const save = async () => {
     setSaving(true);
@@ -448,8 +798,63 @@ function FoodFreqTab({ token, date, initialData, onSave }) {
       {toast && <Toast msg={toast} type={toast.includes("Σφάλμα")?"error":"success"} onClose={()=>setToast(null)} />}
 
       <Card className="p-4">
-        <p className="text-sm font-semibold text-gray-700 mb-0.5">Εβδομαδιαία Συχνότητα Τροφίμων</p>
-        <p className="text-xs text-gray-400">Εβδομάδα: {fmtDate(ws)}</p>
+        <Eyebrow>Αυτόματα από τα Habits</Eyebrow>
+        <p className="text-xs text-gray-400 mb-3">Εβδομάδα {fmtDate(ws)} — δεν χρειάζεται καταχώρηση, ενημερώνεται μόνο του</p>
+        {habitWeekStats===null ? (
+          <div className="flex justify-center py-3"><Spinner/></div>
+        ) : (
+          <div className="space-y-2.5">
+            {habitWeekStats.map(s=>(
+              <div key={s.key} className="flex items-center gap-3">
+                <p className="text-sm flex-1 text-gray-600">{s.label}</p>
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-20 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-forest-500 rounded-full" style={{width:`${s.outOf?Math.round(s.count/s.outOf*100):0}%`}} />
+                  </div>
+                  <span className="text-xs font-bold text-forest-700 w-8 text-right">{s.count}/{s.outOf}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-4">
+        <Eyebrow>Αυτόματα από τις καταγραφές φαγητού</Eyebrow>
+        <p className="text-xs text-gray-400 mb-3">Βάσει των "Συστατικών" που πρόσθεσες ανά γεύμα (προαιρετικό πεδίο) — δεν αντικαθιστά τη χειροκίνητη καταχώρηση από κάτω</p>
+        {foodCompStats===null ? (
+          <div className="flex justify-center py-3"><Spinner/></div>
+        ) : foodCompStats.daysTracked===0 ? (
+          <p className="text-xs text-gray-400 text-center py-2">Δεν έχεις καταγράψει ακόμα συστατικά αυτή την εβδομάδα.</p>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-50">
+              <p className="text-sm text-gray-600">Πρωτεΐνη/ημέρα (μ.ο., {foodCompStats.daysTracked}/{foodCompStats.outOf} ημέρες)</p>
+              <p className="text-sm font-bold text-forest-700">≈{Math.round(foodCompStats.avgProtein)}γρ</p>
+            </div>
+            <div className="space-y-2">
+              {FOOD_FREQ_CATS.map(cat=>(
+                <div key={cat.id} className="flex items-center gap-3">
+                  <p className="text-xs flex-1 text-gray-600">{cat.label}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-16 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-terracotta-400 rounded-full" style={{width:`${Math.min(100,(foodCompStats.catDays[cat.id]||0)/7*100)}%`}} />
+                    </div>
+                    <span className="text-xs font-bold text-terracotta-600 w-4">{foodCompStats.catDays[cat.id]||0}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </Card>
+
+      <Card className="p-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold text-gray-700 mb-0.5">Εβδομαδιαία Συχνότητα Τροφίμων (χειροκίνητα)</p>
+          <p className="text-xs text-gray-400">Εβδομάδα: {fmtDate(ws)}</p>
+        </div>
+        <span className="text-xs font-bold text-forest-700 bg-forest-50 px-2.5 py-1 rounded-full flex-shrink-0">{logged}/{FOOD_FREQ_CATS.length}</span>
       </Card>
 
       <Card className="divide-y divide-gray-50">
@@ -460,13 +865,13 @@ function FoodFreqTab({ token, date, initialData, onSave }) {
                 <p className="text-sm font-medium text-gray-700">{cat.label}</p>
                 <p className="text-xs text-gray-400">{cat.hint}</p>
               </div>
-              <span className="text-lg font-bold text-violet-600 ml-2">{counts[cat.id]||"0"}</span>
+              <span className="text-lg font-bold text-forest-700 ml-2 font-display">{counts[cat.id]||"0"}</span>
             </div>
             <div className="flex gap-1.5">
               {FREQ_OPTIONS.map(v=>(
                 <button key={v} onClick={()=>setCount(cat.id,v)}
                   className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors
-                    ${(counts[cat.id]||"0")===v?"bg-violet-600 text-white":"bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                    ${(counts[cat.id]||"0")===v?"bg-forest-700 text-white":"bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
                   {v}
                 </button>
               ))}
@@ -494,6 +899,8 @@ function FeedbackTab({ token, date, initialData, onSave }) {
     "Κάτι που θέλω να αλλάξω αύριο...",
   ];
 
+  useEffect(()=>{ setComment(initialData?.[0]?.comment||""); }, [initialData, date]);
+
   const save = async () => {
     if (!comment.trim()) return;
     setSaving(true);
@@ -520,7 +927,7 @@ function FeedbackTab({ token, date, initialData, onSave }) {
           <div className="space-y-1.5">
             {PROMPTS.map(p=>(
               <button key={p} onClick={()=>setComment(c=>c?c+"\n\n"+p:p)}
-                className="w-full text-left text-xs text-violet-600 bg-violet-50 hover:bg-violet-100 px-3 py-2 rounded-xl transition-colors">
+                className="w-full text-left text-xs text-forest-700 bg-forest-50 hover:bg-forest-100 px-3 py-2 rounded-xl transition-colors">
                 + {p}
               </button>
             ))}
@@ -539,7 +946,6 @@ function FeedbackTab({ token, date, initialData, onSave }) {
   );
 }
 
-// ─── CLIENT APP ───────────────────────────────────────────────────────────────
 // ─── CLIENT: COACH NOTES TAB ──────────────────────────────────────────────────
 function CoachNotesTab({ notes }) {
   if (!notes || notes.length === 0) return (
@@ -552,8 +958,8 @@ function CoachNotesTab({ notes }) {
   return (
     <div className="space-y-3">
       {[...notes].sort((a,b)=>b.date?.localeCompare(a.date)).map((n,i)=>(
-        <Card key={i} className="p-4 border-l-4 border-l-violet-400">
-          <p className="text-xs font-semibold text-violet-500 mb-1">{fmtDate(n.date)}</p>
+        <Card key={i} className="p-4 border-l-4 border-l-terracotta-400">
+          <p className="text-xs font-semibold text-terracotta-600 mb-1">{fmtDate(n.date)}</p>
           <p className="text-sm text-gray-700 whitespace-pre-wrap">{n.note}</p>
         </Card>
       ))}
@@ -561,15 +967,38 @@ function CoachNotesTab({ notes }) {
   );
 }
 
+// ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
+function BottomNav({ tabs, active }) {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-forest-100 safe-b">
+      <div className="max-w-lg mx-auto px-2 pt-1.5 flex">
+        {tabs.map(t=>(
+          <button key={t.id} onClick={t.onClick}
+            className="flex-1 flex flex-col items-center gap-0.5 py-1.5 relative">
+            <div className={`w-11 h-8 rounded-full flex items-center justify-center transition-colors relative
+              ${active===t.id ? "bg-forest-700 text-white" : "text-gray-400"}`}>
+              {t.icon}
+              {t.unread && <span className="absolute top-0.5 right-1.5 w-2 h-2 bg-terracotta-500 rounded-full border border-white" />}
+            </div>
+            <span className={`text-[10px] font-medium ${active===t.id?"text-forest-700":"text-gray-400"}`}>{t.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── CLIENT APP ───────────────────────────────────────────────────────────────
 function ClientApp({ token, name }) {
   const [date, setDate] = useState(today());
   const [tab, setTab] = useState("habits");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
-  const [showSettings, setShowSettings] = useState(false);
   const [coachNotes, setCoachNotes] = useState([]);
   const [hasUnread, setHasUnread] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
+  const [weekStrip, setWeekStrip] = useState([]);
+  const weekCacheRef = useRef({});
 
   const LAST_SEEN_KEY = "ht_coach_notes_seen_" + token;
 
@@ -596,8 +1025,40 @@ function ClientApp({ token, name }) {
     setLoading(false);
   }, [token, date]);
 
+  const loadWeekStrip = useCallback(async (centerDate, force) => {
+    const days = [];
+    const dt = new Date(centerDate);
+    for (let i=6;i>=0;i--) { const d = new Date(dt); d.setDate(d.getDate()-i); days.push(d.toISOString().split("T")[0]); }
+    if (force) days.forEach(d=>{ delete weekCacheRef.current[d]; });
+    const results = await Promise.all(days.map(async d => {
+      if (weekCacheRef.current[d]) return weekCacheRef.current[d];
+      try {
+        const dd = await api("getClientData", { token, date: d });
+        const habits = dd?.habits || [];
+        const doneCt = habits.filter(h=>h.done==="TRUE"||h.done===true).length;
+        const entry = { date:d, total:habits.length, done:doneCt, pct: habits.length? Math.round(doneCt/habits.length*100):null };
+        weekCacheRef.current[d] = entry;
+        return entry;
+      } catch { return { date:d, total:0, done:0, pct:null }; }
+    }));
+    setWeekStrip(results);
+  }, [token]);
+
   useEffect(()=>{ load(); }, [load]);
   useEffect(()=>{ loadCoachNotes(); }, [loadCoachNotes]);
+  useEffect(()=>{ loadWeekStrip(date, false); }, [date, loadWeekStrip]);
+
+  const streak = useMemo(()=>{
+    let s = 0; const t = today();
+    for (let i=weekStrip.length-1;i>=0;i--) {
+      const day = weekStrip[i];
+      if (day.date >= t) continue;
+      if (day.pct===100) s++; else break;
+    }
+    return s;
+  },[weekStrip]);
+
+  const onHabitsSaved = () => { load(); loadWeekStrip(date, true); };
 
   const openCoachTab = () => {
     setTab("coach");
@@ -619,47 +1080,46 @@ function ClientApp({ token, name }) {
   };
 
   const tabs = [
-    { id:"habits", label:"Habits",    icon:"✅" },
-    { id:"food",   label:"Φαγητό",   icon:"🍽" },
-    { id:"freq",   label:"Εβδομάδα", icon:"📊" },
-    { id:"notes",  label:"Σκέψεις",  icon:"💬" },
-    { id:"coach",  label:"Coach",     icon:"💌", unread: hasUnread, onClick: openCoachTab },
+    { id:"habits", label:"Habits",    icon:<IconCheck size={18}/> },
+    { id:"food",   label:"Φαγητό",   icon:<IconPlate size={18}/> },
+    { id:"freq",   label:"Εβδομάδα", icon:<IconWeek size={18}/> },
+    { id:"notes",  label:"Σκέψεις",  icon:<IconChat size={18}/> },
+    { id:"coach",  label:"Coach",     icon:<IconMail size={18}/>, unread: hasUnread, onClick: openCoachTab },
   ];
+  const navTabs = tabs.map(t=>({...t, onClick: t.onClick || (()=>setTab(t.id))}));
 
-  if (showSettings) return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-lg mx-auto px-4 py-4">
-        <SettingsView onBack={()=>setShowSettings(false)} />
-      </div>
-    </div>
-  );
+  const logout = () => {
+    if (!window.confirm("Αποσύνδεση;")) return;
+    [STORAGE.TOKEN, STORAGE.NAME].forEach(k=>ls.del(k));
+    window.location.reload();
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-cream-100 pb-24">
       {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🌿</span>
+      <header className="bg-white border-b border-forest-100 sticky top-0 z-30">
+        <div className="max-w-lg mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-forest-700 flex items-center justify-center text-base flex-shrink-0">🌿</div>
             <div>
-              <p className="text-sm font-bold text-gray-800 leading-tight">{name}</p>
-              <p className="text-xs text-gray-400 leading-tight">Health Tracker</p>
+              <p className="text-sm font-bold text-forest-900 leading-tight font-display">{greeting()}, {name?.split(" ")[0]}</p>
+              <p className="text-xs text-gray-400 leading-tight">Let's Thrive for Life</p>
             </div>
           </div>
-          <button onClick={()=>setShowSettings(true)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded-full">⚙</button>
+          <button onClick={logout} className="w-9 h-9 flex items-center justify-center text-gray-400 hover:bg-forest-50 rounded-full"><IconLogout size={18}/></button>
         </div>
       </header>
 
       {/* Coach notification banner */}
       {showBanner && (
-        <div className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white px-4 py-3 flex items-center justify-between gap-3 shadow-md">
+        <div className="bg-forest-700 text-white px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-1">
             <span className="text-lg">💌</span>
             <p className="text-sm font-medium">Έχεις νέο μήνυμα από την Coach σου!</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button onClick={openCoachTab} className="text-xs font-bold bg-white text-violet-600 px-3 py-1 rounded-full">Δες το</button>
-            <button onClick={()=>setShowBanner(false)} className="text-white/70 hover:text-white text-lg leading-none">×</button>
+            <button onClick={openCoachTab} className="text-xs font-bold bg-white text-forest-700 px-3 py-1 rounded-full">Δες το</button>
+            <button onClick={()=>setShowBanner(false)} className="text-white/70 hover:text-white text-lg leading-none"><IconX size={14}/></button>
           </div>
         </div>
       )}
@@ -667,30 +1127,15 @@ function ClientApp({ token, name }) {
       <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
         {/* Date nav — hidden on coach tab */}
         {tab !== "coach" && (
-          <div className="flex items-center justify-between bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
-            <button onClick={prevDay} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-lg">‹</button>
+          <div className="flex items-center justify-between bg-white rounded-2xl border border-forest-100 card-shadow px-3 py-2.5">
+            <button onClick={prevDay} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-forest-50 text-forest-700"><IconChevL size={18}/></button>
             <div className="text-center">
-              <p className="text-sm font-bold text-gray-800">{fmtDate(date)}</p>
-              {date===today()&&<p className="text-xs text-violet-500 font-medium">Σήμερα</p>}
+              <p className="text-sm font-bold text-forest-900 font-display">{fmtDate(date)}</p>
+              {date===today()&&<p className="text-xs text-terracotta-600 font-semibold">Σήμερα</p>}
             </div>
-            <button onClick={nextDay} disabled={date===today()} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-lg disabled:opacity-30">›</button>
+            <button onClick={nextDay} disabled={date===today()} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-forest-50 text-forest-700 disabled:opacity-30"><IconChevR size={18}/></button>
           </div>
         )}
-
-        {/* Tabs */}
-        <div className="flex bg-white rounded-xl border border-gray-100 shadow-sm p-1 gap-0.5">
-          {tabs.map(t=>(
-            <button key={t.id} onClick={t.onClick || (()=>setTab(t.id))}
-              className={`flex-1 flex flex-col items-center py-2 rounded-lg text-xs font-medium transition-colors relative
-                ${tab===t.id?"bg-violet-600 text-white":"text-gray-500 hover:bg-gray-50"}`}>
-              <span className="text-base leading-none mb-0.5 relative">
-                {t.icon}
-                {t.unread && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />}
-              </span>
-              <span>{t.label}</span>
-            </button>
-          ))}
-        </div>
 
         {/* Content */}
         {tab === "coach" ? (
@@ -699,21 +1144,21 @@ function ClientApp({ token, name }) {
           <div className="flex justify-center py-12"><Spinner /></div>
         ) : (
           <>
-            {tab==="habits" && <HabitTab token={token} date={date} initialData={data?.habits} onSave={load} />}
-            {tab==="food"   && <FoodLogTab token={token} date={date} initialData={data?.foodLog} onSave={load} />}
+            {tab==="habits" && <HabitTab token={token} date={date} initialData={data?.habits} onSave={onHabitsSaved} weekStrip={weekStrip} streak={streak} />}
+            {tab==="food"   && <FoodLogTab token={token} date={date} initialData={data?.foodLog} initialComponents={data?.foodComponents} onSave={load} />}
             {tab==="freq"   && <FoodFreqTab token={token} date={date} initialData={data?.foodFreq} onSave={load} />}
             {tab==="notes"  && <FeedbackTab token={token} date={date} initialData={data?.feedback} onSave={load} />}
           </>
         )}
-
-        <div className="h-6" />
       </div>
+
+      <BottomNav tabs={navTabs} active={tab} />
     </div>
   );
 }
 
 // ─── COACH: CLIENT HISTORY ────────────────────────────────────────────────────
-function ClientHistoryView({ client, password, onBack }) {
+function ClientHistoryView({ client, password, onBack, onDeactivated }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [tab, setTab] = useState("habits");
@@ -739,15 +1184,34 @@ function ClientHistoryView({ client, password, onBack }) {
     return Object.entries(g).sort((a,b)=>b[0].localeCompare(a[0]));
   },[data]);
 
+  const avgCompletion = useMemo(()=>{
+    if (habitsGrouped.length===0) return null;
+    const pcts = habitsGrouped.map(([,habits])=>{
+      const done = habits.filter(h=>h.done==="TRUE"||h.done===true).length;
+      return habits.length ? done/habits.length*100 : 0;
+    });
+    return Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length);
+  },[habitsGrouped]);
+
   const foodGrouped = useMemo(()=>{
     const g = {};
     (data?.foodLog||[]).forEach(e=>{ if(!g[e.date])g[e.date]=[]; g[e.date].push(e); });
     return Object.entries(g).sort((a,b)=>b[0].localeCompare(a[0]));
   },[data]);
 
-  const coachNotesGrouped = useMemo(()=>{
-    return [...(data?.coachNotes||[])].sort((a,b)=>b.date?.localeCompare(a.date));
+  // Pairs each day's client comment with Lambrini's reply for the same date,
+  // so the "Σκέψεις & Σχόλια" tab reads like a thread instead of two separate lists.
+  const conversation = useMemo(()=>{
+    const fbByDate = {}; (data?.feedback||[]).forEach(f=>{ fbByDate[f.date]=f; });
+    const noteByDate = {}; (data?.coachNotes||[]).forEach(n=>{ noteByDate[n.date]=n; });
+    const dates = Array.from(new Set([...Object.keys(fbByDate), ...Object.keys(noteByDate)])).sort().reverse();
+    return dates.map(date=>({ date, feedback:fbByDate[date]||null, note:noteByDate[date]||null }));
   },[data]);
+
+  const lastActive = useMemo(()=>{
+    const dates = [...habitsGrouped.map(g=>g[0]), ...foodGrouped.map(g=>g[0])].sort().reverse();
+    return dates[0] || null;
+  },[habitsGrouped, foodGrouped]);
 
   // Prefill note when switching date
   useEffect(()=>{
@@ -766,6 +1230,50 @@ function ClientHistoryView({ client, password, onBack }) {
     setSavingNote(false);
   };
 
+  const copyLink = async () => {
+    const link = `${window.location.origin}${window.location.pathname}?token=${client.token}`;
+    try { await navigator.clipboard.writeText(link); setNoteToast("✓ Ο σύνδεσμος αντιγράφηκε!"); }
+    catch { setNoteToast(link); }
+  };
+
+  // Client-side only — bundles everything already fetched via getClientHistory into
+  // one portable JSON file. No new backend action needed.
+  const exportClientData = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      client: { name: client.name, clientId: client.clientId },
+      habits: data?.habits || [],
+      foodLog: data?.foodLog || [],
+      foodComponents: data?.foodComponents || [],
+      foodFrequency: data?.foodFreq || [],
+      feedback: data?.feedback || [],
+      coachNotes: data?.coachNotes || [],
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(client.name||"client").trim().replace(/\s+/g,"_")}-health-tracker-export-${today()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setNoteToast("✓ Το αρχείο κατέβηκε.");
+  };
+
+  // Uses the existing deleteEntry action — soft-delete only: sets active=FALSE on the
+  // Clients row so login stops working and they drop off the coach's active list.
+  // Historical rows in every other sheet are untouched.
+  const [deactivating, setDeactivating] = useState(false);
+  const deactivateClient = async () => {
+    if (!window.confirm(`Απενεργοποίηση του/της ${client.name};\n\nΔεν θα μπορεί πλέον να συνδεθεί με το link του/της. Το ιστορικό του/της ΔΕΝ διαγράφεται — παραμένει στο Sheet.`)) return;
+    setDeactivating(true);
+    try {
+      await api("deleteEntry", { coachPassword:password, clientId:client.clientId }, "POST");
+      onDeactivated && onDeactivated();
+    } catch(e) { setNoteToast("Σφάλμα: "+e.message); setDeactivating(false); }
+  };
+
   if (loading) return <div className="flex justify-center py-12"><Spinner /></div>;
   if (error) return <p className="text-red-500 text-sm p-4">{error}</p>;
 
@@ -774,17 +1282,36 @@ function ClientHistoryView({ client, password, onBack }) {
       {noteToast && <Toast msg={noteToast} type={noteToast.includes("Σφάλμα")?"error":"success"} onClose={()=>setNoteToast(null)} />}
 
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">←</button>
-        <div>
-          <h2 className="font-bold text-gray-800">{client.name}</h2>
-          <p className="text-xs text-gray-400">token: {client.token}</p>
+        <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-forest-50 text-forest-700"><IconArrowL size={18}/></button>
+        <div className="flex-1 min-w-0">
+          <h2 className="font-bold text-forest-900 font-display">{client.name}</h2>
+          <p className="text-xs text-gray-400 truncate">token: {client.token}</p>
         </div>
+        <button onClick={copyLink} className="flex items-center gap-1.5 text-xs font-semibold text-forest-700 border border-forest-200 rounded-xl px-3 py-2 hover:bg-forest-50 flex-shrink-0">
+          <IconCopy size={14}/> Σύνδεσμος
+        </button>
+      </div>
+
+      {/* Summary stats */}
+      <div className="grid grid-cols-3 gap-2.5">
+        <Card className="p-3 text-center">
+          <p className="text-xl font-bold text-forest-700 font-display">{avgCompletion!=null?`${avgCompletion}%`:"—"}</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">Μ.Ο. Habits</p>
+        </Card>
+        <Card className="p-3 text-center">
+          <p className="text-xl font-bold text-forest-700 font-display">{habitsGrouped.length}</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">Ημέρες με δεδομένα</p>
+        </Card>
+        <Card className="p-3 text-center">
+          <p className="text-sm font-bold text-forest-700 font-display mt-1">{lastActive?fmtDateShort(lastActive):"—"}</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">Τελευταία ενεργός</p>
+        </Card>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
-        {[["habits","Habits"],["food","Φαγητό"],["freq","Εβδομάδα"],["feedback","Σκέψεις"],["coachnotes","✍️ Σχόλιά μου"]].map(([v,l])=>(
-          <button key={v} onClick={()=>setTab(v)} className={`flex-shrink-0 flex-1 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${tab===v?"bg-white text-violet-700 shadow":"text-gray-500"}`}>{l}</button>
+      <div className="flex gap-1 bg-white p-1 rounded-xl overflow-x-auto border border-forest-100">
+        {[["habits","Habits"],["food","Φαγητό"],["freq","Εβδομάδα"],["notes","Σκέψεις & Σχόλια"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setTab(v)} className={`flex-shrink-0 flex-1 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${tab===v?"bg-forest-700 text-white":"text-gray-500"}`}>{l}</button>
         ))}
       </div>
 
@@ -798,15 +1325,15 @@ function ClientHistoryView({ client, password, onBack }) {
               <Card key={date} className="p-4">
                 <div className="flex justify-between items-center mb-2">
                   <p className="text-sm font-semibold text-gray-700">{fmtDate(date)}</p>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pct===100?"bg-emerald-100 text-emerald-700":pct>=60?"bg-violet-100 text-violet-700":"bg-gray-100 text-gray-500"}`}>{done}/{habits.length}</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pct===100?"bg-forest-100 text-forest-700":pct>=60?"bg-terracotta-100 text-terracotta-700":"bg-gray-100 text-gray-500"}`}>{done}/{habits.length}</span>
                 </div>
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
-                  <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full" style={{width:`${pct}%`}} />
+                  <div className="h-full bg-forest-600 rounded-full" style={{width:`${pct}%`}} />
                 </div>
                 <div className="space-y-1">
                   {habits.map((h,i)=>(
                     <div key={i} className="flex items-center gap-2">
-                      <span className={`text-xs ${(h.done==="TRUE"||h.done===true)?"text-emerald-500":"text-gray-300"}`}>{(h.done==="TRUE"||h.done===true)?"✓":"○"}</span>
+                      <span className={`text-xs ${(h.done==="TRUE"||h.done===true)?"text-forest-600":"text-gray-300"}`}>{(h.done==="TRUE"||h.done===true)?"✓":"○"}</span>
                       <p className={`text-xs ${(h.done==="TRUE"||h.done===true)?"text-gray-600":"text-gray-400"}`}>{h.habit}</p>
                     </div>
                   ))}
@@ -827,12 +1354,13 @@ function ClientHistoryView({ client, password, onBack }) {
                 <div key={i} className="border-b border-gray-50 last:border-0 pb-3 last:pb-0 mb-3 last:mb-0">
                   <div className="flex gap-2 text-xs text-gray-400 mb-1">
                     {e.time&&<span>🕐 {e.time}</span>}
-                    {e.hungerScore&&<span>Κορεσμός: {e.hungerScore}/10</span>}
+                    {(e.hungerScore!=null&&e.hungerScore!=="")&&<span>Πείνα: {e.hungerScore}/5</span>}
+                    {(e.enjoyment!=null&&e.enjoyment!=="")&&<span>Απόλαυση: {e.enjoyment}/5</span>}
                     {e.energyCal&&<span>⚡ {e.energyCal} kcal</span>}
                   </div>
                   {e.food&&<p className="text-sm text-gray-700">{e.food}</p>}
                   {e.portion&&<p className="text-xs text-gray-400">Μερίδα: {e.portion}</p>}
-                  {e.emotions&&<p className="text-xs text-violet-500 mt-1">💭 {e.emotions}</p>}
+                  {e.emotions&&<p className="text-xs text-terracotta-600 mt-1">💭 {e.emotions}</p>}
                 </div>
               ))}
             </Card>
@@ -856,9 +1384,9 @@ function ClientHistoryView({ client, password, onBack }) {
                       <p className="text-sm flex-1 text-gray-600">{cat?.label||r.category}</p>
                       <div className="flex items-center gap-2">
                         <div className="h-1.5 w-20 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-violet-400 rounded-full" style={{width:`${Math.min(100,(parseInt(r.count)||0)/7*100)}%`}} />
+                          <div className="h-full bg-forest-400 rounded-full" style={{width:`${Math.min(100,(parseInt(r.count)||0)/7*100)}%`}} />
                         </div>
-                        <span className="text-xs font-bold text-violet-600 w-4">{r.count}</span>
+                        <span className="text-xs font-bold text-forest-700 w-4">{r.count}</span>
                       </div>
                     </div>
                   );
@@ -869,21 +1397,9 @@ function ClientHistoryView({ client, password, onBack }) {
         </div>
       )}
 
-      {tab==="feedback" && (
-        <div className="space-y-3">
-          {(data?.feedback||[]).length===0&&<p className="text-sm text-gray-400 text-center py-8">Δεν υπάρχουν σχόλια</p>}
-          {[...(data?.feedback||[])].sort((a,b)=>b.date?.localeCompare(a.date)).map((f,i)=>(
-            <Card key={i} className="p-4">
-              <p className="text-xs text-gray-400 mb-1">{fmtDate(f.date)}</p>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{f.comment}</p>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {tab==="coachnotes" && (
+      {tab==="notes" && (
         <div className="space-y-4">
-          {/* Write note */}
+          {/* Write / edit a note */}
           <Card className="p-4 space-y-3">
             <p className="text-sm font-semibold text-gray-700">✍️ Γράψε σχόλιο για τον/την {client.name}</p>
             <p className="text-xs text-gray-400">Το σχόλιο θα φαίνεται στον πελάτη στην καρτέλα "Από την Coach".</p>
@@ -900,21 +1416,55 @@ function ClientHistoryView({ client, password, onBack }) {
             </Btn>
           </Card>
 
-          {/* Previous notes */}
-          <p className="text-xs text-gray-400 font-medium px-1">Προηγούμενα σχόλια</p>
-          {coachNotesGrouped.length===0 && <p className="text-sm text-gray-400 text-center py-6">Δεν υπάρχουν σχόλια ακόμα</p>}
-          {coachNotesGrouped.map((n,i)=>(
-            <Card key={i} className="p-4">
-              <div className="flex justify-between items-center mb-1">
-                <p className="text-xs font-semibold text-violet-600">{fmtDate(n.date)}</p>
-                <button onClick={()=>{ setNoteDate(n.date); setNoteText(n.note); setTab("coachnotes"); }}
-                  className="text-xs text-gray-400 hover:text-violet-600">✏️ Επεξεργασία</button>
-              </div>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{n.note}</p>
+          {/* Conversation: client's comment paired with Lambrini's reply, per day */}
+          <p className="text-xs text-gray-400 font-medium px-1">Ιστορικό</p>
+          {conversation.length===0 && <p className="text-sm text-gray-400 text-center py-6">Δεν υπάρχουν σχόλια ακόμα</p>}
+          {conversation.map(({date, feedback, note})=>(
+            <Card key={date} className="p-4 space-y-3">
+              <p className="text-xs font-semibold text-gray-500">{fmtDate(date)}</p>
+
+              {feedback ? (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Σχόλιο πελάτη</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{feedback.comment}</p>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-300 italic">— δεν έγραψε σχόλιο αυτή τη μέρα —</p>
+              )}
+
+              {note ? (
+                <div className="pl-3 border-l-4 border-l-forest-400">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[10px] font-bold text-forest-600 uppercase tracking-wide">Η απάντησή σου</p>
+                    <button onClick={()=>{ setNoteDate(date); setNoteText(note.note); }}
+                      className="text-xs text-gray-400 hover:text-forest-700">✏️ Επεξεργασία</button>
+                  </div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.note}</p>
+                </div>
+              ) : feedback ? (
+                <button onClick={()=>{ setNoteDate(date); setNoteText(""); }}
+                  className="text-xs font-semibold text-forest-600 hover:text-forest-800 flex items-center gap-1">
+                  ↩ Γράψε απάντηση
+                </button>
+              ) : null}
             </Card>
           ))}
         </div>
       )}
+
+      {/* Client management — kept separate from the tabs above, deliberately
+          out of casual reach since deactivation locks the client's access. */}
+      <Card className="p-4 space-y-3">
+        <Eyebrow>Διαχείριση Πελάτη</Eyebrow>
+        <Btn onClick={exportClientData} variant="outline" className="w-full">
+          <IconCopy size={15}/> Εξαγωγή Δεδομένων (JSON)
+        </Btn>
+        <p className="text-xs text-gray-400">Κατεβάζει όλο το ιστορικό του/της — δικό του αντίγραφο, ανεξάρτητα από το Sheet.</p>
+        <Btn onClick={deactivateClient} disabled={deactivating} variant="danger" className="w-full">
+          {deactivating ? <><Spinner/>Απενεργοποίηση...</> : "Απενεργοποίηση Πελάτη"}
+        </Btn>
+        <p className="text-xs text-gray-400">Κλειδώνει το login του — το ιστορικό ΔΕΝ διαγράφεται, μένει στο Sheet.</p>
+      </Card>
     </div>
   );
 }
@@ -929,7 +1479,8 @@ function CoachApp({ password }) {
   const [newName, setNewName] = useState("");
   const [adding, setAdding] = useState(false);
   const [toast, setToast] = useState(null);
-  const [showSettings, setShowSettings] = useState(false);
+  const [search, setSearch] = useState("");
+  const [newClientInfo, setNewClientInfo] = useState(null);
 
   const loadClients = useCallback(async () => {
     setLoading(true);
@@ -942,65 +1493,93 @@ function CoachApp({ password }) {
 
   useEffect(()=>{ loadClients(); }, [loadClients]);
 
+  const filteredClients = useMemo(()=>{
+    const sorted = [...clients].sort((a,b)=>(a.name||"").localeCompare(b.name||"", "el"));
+    if (!search.trim()) return sorted;
+    const q = search.trim().toLowerCase();
+    return sorted.filter(c=>(c.name||"").toLowerCase().includes(q));
+  },[clients, search]);
+
   const addClient = async () => {
     if (!newName.trim()) return;
     setAdding(true);
     try {
       const d = await api("addClient", { coachPassword:password, name:newName.trim() }, "POST");
-      setToast(`✓ Πελάτης προστέθηκε! Token: ${d.token}`);
+      const link = `${window.location.origin}${window.location.pathname}?token=${d.token}`;
+      setNewClientInfo({ name:newName.trim(), token:d.token, link });
       setNewName(""); setShowAdd(false);
       loadClients();
     } catch(e) { setToast("Σφάλμα: "+e.message); }
     setAdding(false);
   };
 
-  const logout = () => { ls.del(STORAGE.COACH); window.location.reload(); };
+  const copyClientLink = async (link) => {
+    try { await navigator.clipboard.writeText(link); setToast("✓ Ο σύνδεσμος αντιγράφηκε!"); }
+    catch { setToast(link); }
+  };
 
-  if (showSettings) return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-2xl mx-auto px-4 py-4">
-        <SettingsView onBack={()=>setShowSettings(false)} />
-      </div>
-    </div>
-  );
+  const logout = () => {
+    if (!window.confirm("Αποσύνδεση;")) return;
+    ls.del(STORAGE.COACH);
+    window.location.reload();
+  };
 
   if (selected) return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-cream-100">
       <div className="max-w-2xl mx-auto px-4 py-4">
-        <ClientHistoryView client={selected} password={password} onBack={()=>setSelected(null)} />
+        <ClientHistoryView client={selected} password={password} onBack={()=>setSelected(null)}
+          onDeactivated={()=>{ setSelected(null); loadClients(); }} />
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-cream-100">
       {toast && <Toast msg={toast} type={toast.includes("Σφάλμα")?"error":"success"} onClose={()=>setToast(null)} />}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🌿</span>
+      <header className="bg-white border-b border-forest-100 sticky top-0 z-30">
+        <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-forest-700 flex items-center justify-center text-base">🌿</div>
             <div>
-              <p className="text-sm font-bold text-gray-800">Coach Dashboard</p>
+              <p className="text-sm font-bold text-forest-900 font-display">Coach Dashboard</p>
               <p className="text-xs text-gray-400">Let's Thrive for Life</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={()=>setShowSettings(true)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded-full">⚙</button>
-            <button onClick={logout} className="text-xs text-gray-400 border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50">Έξοδος</button>
+            <button onClick={logout} className="w-9 h-9 flex items-center justify-center text-gray-400 hover:bg-forest-50 rounded-full"><IconLogout size={18}/></button>
           </div>
         </div>
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
 
+        {/* New client link card */}
+        {newClientInfo && (
+          <Card className="p-4 space-y-3 pop border-forest-200">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-forest-900">✓ Ο/Η {newClientInfo.name} προστέθηκε!</p>
+              <button onClick={()=>setNewClientInfo(null)} className="text-gray-300 hover:text-gray-500"><IconX size={16}/></button>
+            </div>
+            <p className="text-xs text-gray-400">Στείλε αυτόν τον προσωπικό σύνδεσμο — ανοίγει κατευθείαν τον tracker, χωρίς login.</p>
+            <div className="flex items-center gap-2 bg-forest-50 rounded-xl px-3 py-2">
+              <p className="text-xs text-forest-800 truncate flex-1">{newClientInfo.link}</p>
+              <button onClick={()=>copyClientLink(newClientInfo.link)} className="flex-shrink-0 text-forest-700"><IconCopy size={16}/></button>
+            </div>
+            <a href={`https://wa.me/?text=${encodeURIComponent(`Γεια σου ${newClientInfo.name}! Εδώ είναι ο προσωπικός σου σύνδεσμος για το Health Tracker: ${newClientInfo.link}`)}`}
+              target="_blank" rel="noopener noreferrer" className="block">
+              <Btn className="w-full" size="sm">Αποστολή μέσω WhatsApp</Btn>
+            </a>
+          </Card>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3">
           <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-violet-600">{clients.length}</p>
+            <p className="text-2xl font-bold text-forest-700 font-display">{clients.length}</p>
             <p className="text-xs text-gray-400 mt-0.5">Ενεργοί Πελάτες</p>
           </Card>
           <Card className="p-4 flex items-center justify-center">
-            <Btn onClick={()=>setShowAdd(p=>!p)} size="sm">+ Νέος Πελάτης</Btn>
+            <Btn onClick={()=>setShowAdd(p=>!p)} size="sm"><IconPlus size={15}/> Νέος Πελάτης</Btn>
           </Card>
         </div>
 
@@ -1016,34 +1595,47 @@ function CoachApp({ password }) {
               </Btn>
               <Btn onClick={()=>setShowAdd(false)} variant="outline">Ακύρωση</Btn>
             </div>
-            <p className="text-xs text-gray-400">Μετά τη δημιουργία θα εμφανιστεί το μοναδικό token — αντέγραψέ το και στείλτο στον πελάτη.</p>
           </Card>
         )}
 
         {/* Client list */}
         <Card className="divide-y divide-gray-50">
-          <div className="px-4 py-3 flex justify-between items-center">
-            <p className="text-sm font-semibold text-gray-700">Πελάτες</p>
-            <button onClick={loadClients} className="text-xs text-violet-500 hover:text-violet-700">↻ Ανανέωση</button>
+          <div className="px-4 py-3 space-y-2.5">
+            <div className="flex justify-between items-center">
+              <p className="text-sm font-semibold text-gray-700">Πελάτες</p>
+              <button onClick={loadClients} className="text-xs text-forest-600 hover:text-forest-800">↻ Ανανέωση</button>
+            </div>
+            {clients.length>0 && (
+              <div className="relative">
+                <IconSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
+                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Αναζήτηση πελάτη..."
+                  className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm" />
+              </div>
+            )}
           </div>
           {loading ? (
             <div className="flex justify-center py-8"><Spinner /></div>
           ) : error ? (
             <p className="text-sm text-red-500 px-4 py-4">{error}</p>
-          ) : clients.length===0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">Δεν υπάρχουν πελάτες ακόμα</p>
-          ) : clients.map(c=>(
-            <button key={c.clientId} onClick={()=>setSelected(c)}
-              className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 text-left transition-colors">
-              <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center text-sm font-bold text-violet-600 flex-shrink-0">
-                {c.name?.[0]?.toUpperCase()||"?"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-800">{c.name}</p>
-                <p className="text-xs text-gray-400 truncate">token: {c.token}</p>
-              </div>
-              <span className="text-gray-300">›</span>
-            </button>
+          ) : filteredClients.length===0 ? (
+            <p className="text-sm text-gray-400 text-center py-8">{clients.length===0?"Δεν υπάρχουν πελάτες ακόμα":"Κανένα αποτέλεσμα"}</p>
+          ) : filteredClients.map(c=>(
+            <div key={c.clientId} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-forest-50/50 transition-colors">
+              <button onClick={()=>setSelected(c)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                <div className="w-9 h-9 rounded-full bg-forest-100 flex items-center justify-center text-sm font-bold text-forest-700 flex-shrink-0 font-display">
+                  {c.name?.[0]?.toUpperCase()||"?"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{c.name}</p>
+                  <p className="text-xs text-gray-400 truncate">token: {c.token}</p>
+                </div>
+              </button>
+              <button onClick={()=>copyClientLink(`${window.location.origin}${window.location.pathname}?token=${c.token}`)}
+                className="w-8 h-8 flex-shrink-0 flex items-center justify-center text-gray-300 hover:text-forest-700 hover:bg-forest-50 rounded-full" title="Αντιγραφή συνδέσμου">
+                <IconCopy size={15}/>
+              </button>
+              <button onClick={()=>setSelected(c)} className="text-gray-300 flex-shrink-0"><IconChevR size={16}/></button>
+            </div>
           ))}
         </Card>
 
@@ -1063,7 +1655,26 @@ function App() {
     if (coach) return { type:"coach", password:coach };
     return null;
   });
+  const [checkedLink, setCheckedLink] = useState(false);
 
+  useEffect(()=>{
+    if (session) { setCheckedLink(true); return; }
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("token");
+    if (!t) { setCheckedLink(true); return; }
+    (async () => {
+      try {
+        const data = await api("getClient", { token: t });
+        ls.set(STORAGE.TOKEN, t);
+        ls.set(STORAGE.NAME, data.name);
+        window.history.replaceState({}, "", window.location.pathname);
+        setSession({ type:"client", token:t, name:data.name });
+      } catch(e) { /* invalid/expired link — fall back to manual login */ }
+      setCheckedLink(true);
+    })();
+  }, []);
+
+  if (!checkedLink) return <SplashScreen />;
   if (!session) return <LoginView onLogin={setSession} />;
   if (session.type==="coach") return <CoachApp password={session.password} />;
   return <ClientApp token={session.token} name={session.name} />;
