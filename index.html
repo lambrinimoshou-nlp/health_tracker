@@ -142,22 +142,27 @@ const NUTRITION_UNITS = {
   temaxio:     { label:"τεμάχιο",     grams:50 }, // used for eggs — 1 τεμάχιο ≈ 1 αυγό ≈ 50γρ
   feta:        { label:"φέτα",        grams:20 }, // used for γαλοπούλα/τυρί — 1 φέτα ≈ 20γρ (ενιαία τιμή, ρύθμισε αν χρειάζεται)
 };
-const PROTEIN_DENSITY = { // grams of protein per 100g, by category id — PROVISIONAL
-  legum:8, ladera:3, pasta:5, fish:20, chicken:27, redmeat:26, sweetfat:5, fried:8, coffee:0, alcohol:0,
-  // added for protein-only categories — rougher estimates, flag for Λαμπρίνη to review:
-  egg:13, dairy:4, yogurt:5, strained_yogurt:9, cheese:18, milk:3.3, turkey_slices:19, quinoa:4.4, nuts:20, soy:12, kefir:3.3,
+const PROTEIN_PER_SERVING = { // grams of protein per ONE selected serving (category+unit) — from
+    // Λαμπρινή's own exchange table (Aug 2026), not a generic density estimate. Categories not
+    // listed here (fried, sweetfat, coffee, alcohol, ladera, pasta) intentionally contribute 0g —
+    // tracked for frequency only. Ask her before adding numbers for those.
+    milk:{flitzani:8}, yogurt:{flitzani:8}, strained_yogurt:{flitzani:16}, kefir:{flitzani:8}, dairy:{flitzani:8},
+    cheese:{feta:7,spirtokouto:7}, turkey_slices:{feta:7}, egg:{temaxio:7},
+    fish:{spirtokouto:7}, chicken:{spirtokouto:7}, redmeat:{spirtokouto:7}, legum:{flitzani:7},
+    nuts:{spirtokouto:6}, soy:{flitzani:7}, quinoa:{flitzani:8},
 };
-const CATEGORY_DEFAULT_UNIT = {
+  const CATEGORY_DEFAULT_UNIT = {
   legum:"flitzani", ladera:"flitzani", pasta:"flitzani", fish:"spirtokouto", chicken:"spirtokouto",
   redmeat:"spirtokouto", sweetfat:"spirtokouto", fried:"flitzani", coffee:"spirtokouto", alcohol:"spirtokouto",
   egg:"temaxio", dairy:"flitzani", yogurt:"flitzani", strained_yogurt:"flitzani", cheese:"feta",
   milk:"flitzani", turkey_slices:"feta", quinoa:"flitzani", nuts:"spirtokouto", soy:"spirtokouto", kefir:"flitzani",
 };
 const proteinForComponent = c => {
-  const grams = (NUTRITION_UNITS[c.unit]?.grams || 0) * (parseFloat(c.qty ?? c.quantity) || 0);
-  return grams * (PROTEIN_DENSITY[c.category] ?? 0) / 100;
+    const perServing = PROTEIN_PER_SERVING[c.category]?.[c.unit];
+    if (perServing == null) return 0;
+    return perServing * (parseFloat(c.qty ?? c.quantity) || 0);
 };
-const EMPTY_COMPONENT = () => ({ category:"", unit:"spirtokouto", qty:"1" });
+  const EMPTY_COMPONENT = () => ({ category:"", unit:"spirtokouto", qty:"1" });
 
 const FREQ_OPTIONS = ["0","1","2","3","4","5","6","7+"];
 const HUNGER_LABELS = {0:"Πολύ πεινασμένη",1:"Πεινασμένη",2:"Λίγο πεινασμένη",3:"Ουδέτερη",4:"Χορτάτη",5:"Πολύ χορτάτη"};
