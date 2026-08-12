@@ -119,6 +119,12 @@ const PROTEIN_ONLY_CATS = [
   { id:"nuts",            label:"🌰 Ξηροί καρποί",        hint:"αμύγδαλα, καρύδια, φιστίκια" },
   { id:"soy",             label:"🫛 Σόγια",                hint:"φασόλια σόγιας, edamame, τόφου" },
   { id:"kefir",           label:"🧋 Κεφίρ",               hint:"κεφίρ γάλακτος" },
+  { id:"peanut_butter",  label:"🥜 Φυστικοβούτυρο",              hint:"1 γεμάτη κουταλιά σούπας" },
+  { id:"oats",           label:"🌾 Κουάκερ / Βρώμη",             hint:"άψητη βρώμη" },
+  { id:"skyr",           label:"🍦 Skyr / High Protein επιδόρπιο", hint:"π.χ. Skyr, high-protein γιαούρτι επιδόρπιο" },
+  { id:"wholewheat_bread", label:"🍞 Ψωμί ολικής",               hint:"φέτα ψωμιού ολικής άλεσης" },
+  { id:"tofu",           label:"⬜ Τόφου",                       hint:"εκτίμηση, πες μου αν χρειάζεται διόρθωση" },
+  { id:"mushroom",       label:"🍄 Μανιτάρια",                   hint:"μαγειρεμένα" },
 ];
 // Union used only by the Φαγητό-tab component picker — Εβδομάδα tab code must keep
 // referencing FOOD_FREQ_CATS directly, never this combined list.
@@ -141,23 +147,27 @@ const NUTRITION_UNITS = {
   flitzani:    { label:"φλιτζάνι",    grams:150 },
   temaxio:     { label:"τεμάχιο",     grams:50 }, // used for eggs — 1 τεμάχιο ≈ 1 αυγό ≈ 50γρ
   feta:        { label:"φέτα",        grams:20 }, // used for γαλοπούλα/τυρί — 1 φέτα ≈ 20γρ (ενιαία τιμή, ρύθμισε αν χρειάζεται)
+    koutali:   { label:"κ.σ.",           grams:15 }, // κουταλιά σούπας — χρησιμοποιείται για φυστικοβούτυρο
 };
 const PROTEIN_PER_SERVING = { // grams of protein per ONE selected serving (category+unit) — from
     // Λαμπρινή's own exchange table (Aug 2026), not a generic density estimate. Categories not
     // listed here (fried, sweetfat, coffee, alcohol, ladera, pasta) intentionally contribute 0g —
     // tracked for frequency only. Ask her before adding numbers for those.
-    milk:{flitzani:8}, yogurt:{flitzani:8}, strained_yogurt:{flitzani:16}, kefir:{flitzani:8}, dairy:{flitzani:8},
-    cheese:{feta:7,spirtokouto:7}, turkey_slices:{feta:7}, egg:{temaxio:7},
-    fish:{spirtokouto:7}, chicken:{spirtokouto:7}, redmeat:{spirtokouto:7}, legum:{flitzani:7},
-    nuts:{spirtokouto:6}, soy:{flitzani:7}, quinoa:{flitzani:8},
+        milk:{flitzani:8}, yogurt:{flitzani:8}, strained_yogurt:{flitzani:16}, kefir:{flitzani:8}, dairy:{flitzani:8},
+      cheese:{feta:7,spirtokouto:7}, turkey_slices:{feta:7}, egg:{temaxio:7},
+      fish:{spirtokouto:7}, chicken:{spirtokouto:7}, redmeat:{spirtokouto:7}, legum:{flitzani:14}, // φιξ αυγούστ 2026: ½φλ=7γρ → 1φλ=14γρ
+      nuts:{spirtokouto:6}, soy:{flitzani:15}, quinoa:{flitzani:8}, // soy ½φλ=7-8γρ → 1φλ=15γρ
+      peanut_butter:{koutali:7}, oats:{flitzani:15}, skyr:{temaxio:15}, wholewheat_bread:{feta:3},
+      tofu:{spirtokouto:2}, mushroom:{flitzani:4}, // ΕΚΤΙΜΗΣΕΙΣ (δεν είναι από τον πίνακα της Λαμπρινής) — προς επιβεβαίωση
 };
-  const CATEGORY_DEFAULT_UNIT = {
-  legum:"flitzani", ladera:"flitzani", pasta:"flitzani", fish:"spirtokouto", chicken:"spirtokouto",
-  redmeat:"spirtokouto", sweetfat:"spirtokouto", fried:"flitzani", coffee:"spirtokouto", alcohol:"spirtokouto",
-  egg:"temaxio", dairy:"flitzani", yogurt:"flitzani", strained_yogurt:"flitzani", cheese:"feta",
-  milk:"flitzani", turkey_slices:"feta", quinoa:"flitzani", nuts:"spirtokouto", soy:"spirtokouto", kefir:"flitzani",
-};
-const proteinForComponent = c => {
+    const CATEGORY_DEFAULT_UNIT = {
+          legum:"flitzani", ladera:"flitzani", pasta:"flitzani", fish:"spirtokouto", chicken:"spirtokouto",
+          redmeat:"spirtokouto", sweetfat:"spirtokouto", fried:"flitzani", coffee:"spirtokouto", alcohol:"spirtokouto",
+          egg:"temaxio", dairy:"flitzani", yogurt:"flitzani", strained_yogurt:"flitzani", cheese:"feta",
+          milk:"flitzani", turkey_slices:"feta", quinoa:"flitzani", nuts:"spirtokouto", soy:"flitzani", kefir:"flitzani",
+          peanut_butter:"koutali", oats:"flitzani", skyr:"temaxio", wholewheat_bread:"feta", tofu:"spirtokouto", mushroom:"flitzani",
+    };
+    const proteinForComponent = c => {
     const perServing = PROTEIN_PER_SERVING[c.category]?.[c.unit];
     if (perServing == null) return 0;
     return perServing * (parseFloat(c.qty ?? c.quantity) || 0);
@@ -621,6 +631,7 @@ function FoodLogTab({ token, date, initialData, initialComponents, onSave }) {
                     <option value="flitzani">φλιτζάνι</option>
                     <option value="temaxio">τεμάχιο</option>
                     <option value="feta">φέτα</option>
+                    <option value="koutali">κ.σ.</option>
                   </select>
                   <input type="number" min="0" max="10" step="0.5" value={c.qty} onChange={ev=>updComponent(i,ci,"qty",ev.target.value)}
                     className="w-14 flex-shrink-0 border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-center" />
