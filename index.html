@@ -181,7 +181,16 @@ const EMOTIONS_OPTIONS = ["Ήρεμη","Άγχος","Κούραση","Χαρά",
 const WEEKDAYS_SHORT = ["Κυρ","Δευ","Τρι","Τετ","Πεμ","Παρ","Σαβ"];
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
-const today = () => new Date().toISOString().split("T")[0];
+// Local calendar date (NOT UTC) — avoids the day rolling back when the device's
+// local time is ahead of UTC (e.g. Greece/Poland), which used to record "today"
+// as yesterday during the early-morning hours.
+const today = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+};
 const fmtDate = d => {
   const [y,m,day] = d.split("-");
   const months = ["Ιαν","Φεβ","Μαρ","Απρ","Μαΐ","Ιουν","Ιουλ","Αυγ","Σεπ","Οκτ","Νοε","Δεκ"];
