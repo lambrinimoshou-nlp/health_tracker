@@ -1229,6 +1229,57 @@ function ClientHistoryView({ client, password, onBack, onDeactivated }) {
     return dates[0] || null;
   },[habitsGrouped, foodGrouped]);
 
+  
+
+  const weeklyHabitStats = useMemo(()=>{
+    const byWeek = {};
+    (data?.habits||[]).forEach(h=>{
+      const ws = weekStart(h.date);
+      if(!byWeek[ws]) byWeek[ws] = {};
+      if(!byWeek[ws][h.date]) byWeek[ws][h.date] = [];
+      byWeek[ws][h.date].push(h);
+    });
+    return Object.entries(byWeek).sort((a,b)=>b[0].localeCompare(a[0])).map(([ws,byDate])=>{
+      const days = Object.keys(byDate);
+      const stats = WEEKLY_HABIT_STATS.map(s=>({
+        ...s,
+        count: days.filter(d=>byDate[d].some(h=>h.habit===s.habitText && (h.done==="TRUE"||h.done===true))).length,
+        outOf: days.length
+      }));
+      return { ws, stats };
+    });
+  },[data]);
+
+  // Auto-derived weekly category tally + protein estimate, aggregated from the client's
+  // full FoodComponents history (same source/logic as the client's own Εβδομάδα tab,
+  // just computed over every saved week instead of only the current one).
+  const weeklyFoodCompStats = useMemo(()=>{
+    const byWeek = {};
+    (data?.foodComponents||[]).forEach(c=>{
+      const ws = weekStart(c.date);
+      if(!byWeek[ws]) byWeek[ws] = {};
+      if(!byWeek[ws][c.date]) byWeek[ws][c.date] = [];
+      byWeek[ws][c.date].push(c);
+    });
+    return Object.entries(byWeek).sort((a,b)=>b[0].localeCompare(a[0])).map(([ws,byDate])=>{
+      const days = Object.keys(byDate);
+      const catDays = {};
+      FOOD_FREQ_CATS.forEach(cat=>{ catDays[cat.id] = 0; });
+      let proteinDaysCount = 0, proteinSum = 0;
+      days.forEach(d=>{
+        const catsToday = new Set();
+        let dayProtein = 0;
+        (byDate[d]||[]).forEach(c=>{
+          const qty = parseFloat(c.quantity ?? c.qty);
+          if (qty > 0) { catsToday.add(c.category); dayProtein += proteinForComponent({ category: c.category, unit: c.unit, qty }); }
+        });
+        catsToday.forEach(cid=>{ if(catDays[cid] != null) catDays[cid]++; });
+        if (dayProtein > 0) { proteinDaysCount++; proteinSum += dayProtein; }
+      });
+      return { ws, catDays, avgProtein: proteinDaysCount ? proteinSum/proteinDaysCount : 0, daysTracked: proteinDaysCount, outOf: days.length };
+    });
+  },[data]);
+
   // Prefill note when switching date
   useEffect(()=>{
     const existing = (data?.coachNotes||[]).find(n=>n.date===noteDate);
@@ -1386,6 +1437,59 @@ function ClientHistoryView({ client, password, onBack, onDeactivated }) {
 
       {tab==="freq" && (
         <div className="space-y-3">
+          {weeklyHabitStats.length>0 && (
+            <div className="space-y-3">
+              <p className="text-xs text-gray-400 font-medium px-1">Αυτόματα από τις Καθημερινές Συνήθειες</p>
+              {weeklyHabitStats.map(({ws,stats})=>(
+                <Card key={"h-"+ws} className="p-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-3">Εβδομάδα {fmtDate(ws)}</p>
+                  <div className="space-y-2.5">
+                    {stats.map(s=>(
+                      <div key={s.key} className="flex items-center gap-3">
+                        <p className="text-sm flex-1 text-gray-600">{s.label}</p>
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-20 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-forest-500 rounded-full" style={{width:`${s.outOf?Math.round(s.count/s.outOf*100):0}%`}} />
+                          </div>
+                          <span className="text-xs font-bold text-forest-700 w-8 text-right">{s.count}/{s.outOf}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {weeklyFoodCompStats.length>0 && (
+            <div className="space-y-3">
+              <p className="text-xs text-gray-400 font-medium px-1">Αυτόματα από τις καταγραφές φαγητού (Συστατικά)</p>
+              {weeklyFoodCompStats.map(({ws,catDays,avgProtein,daysTracked,outOf})=>(
+                <Card key={"f-"+ws} className="p-4">
+                  <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-50">
+                    <p className="text-sm text-gray-600">Εβδομάδα {fmtDate(ws)} — Πρωτεΐνη/ημέρα (μ.ο., {daysTracked}/{outOf} ημέρες)</p>
+                    <p className="text-sm font-bold text-forest-700">≈{Math.round(avgProtein)}γρ</p>
+                  </div>
+                  <div className="space-y-2">
+                    {FOOD_FREQ_CATS.map(cat=>(
+                      <div key={cat.id} className="flex items-center gap-3">
+                        <p className="text-xs flex-1 text-gray-600">{cat.label}</p>
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-16 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-terracotta-400 rounded-full" style={{width:`${Math.min(100,(catDays[cat.id]||0)/7*100)}%`}} />
+                          </div>
+                          <span className="text-xs font-bold text-terracotta-600 w-4">{catDays[cat.id]||0}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          <p className="text-xs text-gray-400 font-medium px-1">Εβδομαδιαία Συχνότητα Τροφίμων (χειροκίνητα)</p>
+
           {(data?.foodFreq||[]).length===0&&<p className="text-sm text-gray-400 text-center py-8">Δεν υπάρχουν δεδομένα</p>}
           {Object.entries(
             (data?.foodFreq||[]).reduce((g,r)=>{ if(!g[r.weekStart])g[r.weekStart]=[]; g[r.weekStart].push(r); return g; },{})
